@@ -1,36 +1,91 @@
 <!doctype html>
 <html lang="tr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LuxAI Pro</title>
-  <style>
-    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial;background:#090912;color:#fff}
-    .wrap{max-width:900px;margin:0 auto;padding:24px}
-    .card{background:linear-gradient(135deg,#151529,#22123a);border:1px solid #35275a;border-radius:24px;padding:24px;box-shadow:0 16px 60px #0008}
-    h1{font-size:36px;margin:0 0 8px}.gold{color:#ffd56a}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:18px}
-    .box{background:#111120;border:1px solid #292947;border-radius:18px;padding:16px}
-    .btn{display:inline-block;margin-top:18px;background:#7c3aed;color:white;text-decoration:none;padding:12px 18px;border-radius:14px}
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>LuxAI Mini App</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1><span class="gold">LuxAI</span> Pro</h1>
-      <p>Telegram içinde çalışan güçlü AI asistan.</p>
-      <div class="grid">
-        <div class="box">🤖 Yazılı sohbet</div>
-        <div class="box">🎤 Sesli mesaj okuma</div>
-        <div class="box">🎥 Video note okuma</div>
-        <div class="box">🖼️ Fotoğraf analizi</div>
-        <div class="box">🎨 Görsel oluşturma</div>
-        <div class="box">✏️ Fotoğraf düzenleme</div>
-        <div class="box">📄 PDF/TXT okuma</div>
-        <div class="box">📊 Admin takip</div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">L</div>
+        <div>
+          <h1>LuxAI</h1>
+          <p>AI Assistant Pro</p>
+        </div>
       </div>
-      <a class="btn" href="https://t.me/">Telegram’da Aç</a>
-    </div>
+
+      <button class="new-chat" id="newChat">＋ New Chat</button>
+
+      <nav>
+        <button class="nav active" data-mode="chat">💬 AI Chat</button>
+        <button class="nav" data-mode="image">🎨 Image Studio</button>
+        <button class="nav" data-mode="edit">🖼️ Photo Edit</button>
+        <button class="nav" data-mode="files">📄 File Analysis</button>
+        <button class="nav" data-mode="voice">🎤 Voice</button>
+      </nav>
+
+      <div class="user-card">
+        <div class="avatar" id="avatar">A</div>
+        <div>
+          <strong id="userName">User</strong>
+          <span id="userLang">Auto language</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn">☰</button>
+        <div>
+          <h2 id="screenTitle">AI Chat</h2>
+          <p id="screenSub">Chat, voice, image, file analysis</p>
+        </div>
+        <div class="status">● Online</div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-glow"></div>
+        <h3>LuxAI Pro</h3>
+        <p>ChatGPT-style AI experience inside Telegram.</p>
+        <div class="chips">
+          <span>Русский</span>
+          <span>Українська</span>
+          <span>Türkçe</span>
+          <span>English</span>
+        </div>
+      </section>
+
+      <section class="chat" id="chat">
+        <div class="message ai">
+          <div class="bubble">
+            Welcome to LuxAI. Send text, image, voice or files from Telegram bot. Mini App interface is ready.
+          </div>
+        </div>
+      </section>
+
+      <section class="composer">
+        <div class="tools">
+          <label class="tool">
+            📎
+            <input type="file" id="fileInput" hidden />
+          </label>
+          <label class="tool">
+            🖼️
+            <input type="file" id="imageInput" accept="image/*" hidden />
+          </label>
+          <button class="tool" id="voiceBtn">🎤</button>
+        </div>
+
+        <textarea id="prompt" rows="1" placeholder="Ask LuxAI anything..."></textarea>
+        <button class="send" id="sendBtn">➤</button>
+      </section>
+    </main>
   </div>
+
+  <script src="./app.js"></script>
 </body>
 </html>

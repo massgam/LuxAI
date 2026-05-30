@@ -341,7 +341,35 @@ async function generateImage(prompt) {
   });
 
   const image = result.data?.[0];
-  if (!image) throw new Error('Image generation returned no image');
+
+  if (!image) {
+    throw new Error('Image generation returned no image');
+  }
+
+  return image.b64_json
+    ? Buffer.from(image.b64_json, 'base64')
+    : image.url;
+}
+
+async function editImageFromPhoto(photoRecord, prompt) {
+  const imageFile = await toFile(
+    photoRecord.buffer,
+    'telegram-photo.png',
+    { type: 'image/png' }
+  );
+
+  const result = await openai.images.edit({
+    model: IMAGE_MODEL,
+    image: imageFile,
+    prompt: `${prompt}. Keep the original photo realistic and only apply the requested change.`,
+    size: '1024x1024'
+  });
+
+  const image = result.data?.[0];
+
+  if (!image) {
+    throw new Error('Image edit returned no image');
+  }
 
   return image.b64_json
     ? Buffer.from(image.b64_json, 'base64')

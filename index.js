@@ -149,15 +149,28 @@ async function generateImage(prompt) {
 }
 
 async function editImage(imagePath, prompt) {
+  const pngPath = imagePath.endsWith('.png')
+    ? imagePath
+    : imagePath.replace(/\.[^/.]+$/, '') + '.png';
+
+  fs.copyFileSync(imagePath, pngPath);
+
   const result = await openai.images.edit({
     model: IMAGE_MODEL,
-    image: fs.createReadStream(imagePath),
+    image: fs.createReadStream(pngPath),
     prompt,
     size: '1024x1024'
   });
+
   const image = result.data?.[0];
-  if (!image) throw new Error('Image edit returned no image');
-  return image.b64_json ? Buffer.from(image.b64_json, 'base64') : image.url;
+
+  if (!image) {
+    throw new Error('Image edit returned no image');
+  }
+
+  return image.b64_json
+    ? Buffer.from(image.b64_json, 'base64')
+    : image.url;
 }
 
 async function transcribeFile(filePath) {

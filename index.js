@@ -476,7 +476,7 @@ async function handleUserText(msg, text) {
       return;
     }
 
-    if (lastPhoto) {
+    if (lastPhoto && isImageEditRequest(text)) {
       await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🎨 Редактирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🎨 Редагую фото...' : '🎨 Fotoğrafını düzenliyorum...');
       await bot.sendChatAction(chatId, 'upload_photo');
 
@@ -841,7 +841,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({ ok: true, type: 'text', reply: answer });
     }
 
-    if (lastPhoto) {
+    if (lastPhoto && isImageEditRequest(message)) {
       const edited = await editImageFromPhoto(lastPhoto, message);
       stats.imageEdited += 1;
       logAction(fakeMsg, 'mini_app_image_edit', message, { photoFileId: lastPhoto.fileId });

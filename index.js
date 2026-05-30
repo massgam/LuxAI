@@ -103,31 +103,23 @@ async function sendLong(chatId, text, options = {}) {
 }
 
 async function askText(chatId, userText) {
-  const history = getMemory(chatId).map(m => ({
-    role: m.role,
-    content: [{ type: 'input_text', text: m.content }]
-  }));
+  const history = getMemory(chatId)
+    .map(m => `${m.role === 'user' ? 'Kullanıcı' : 'Asistan'}: ${m.content}`)
+    .join('\n');
 
   const response = await openai.responses.create({
     model: TEXT_MODEL,
-    input: [
-      {
-        role: 'system',
-        content: [{ type: 'input_text', text:
-          `Sen ${BOT_NAME} adında çok güçlü, profesyonel bir Telegram AI asistanısın.
-Kullanıcının dilinde cevap ver. Türkçe yazarsa Türkçe, İngilizce yazarsa İngilizce cevap ver.
-Kısa, net, kullanışlı ve profesyonel cevaplar ver.
-Kullanıcı görsel oluşturmak, fotoğraf düzenlemek, ses göndermek veya dosya göndermek isterse sistem bunu otomatik yönetecek.`
-        }]
-      },
-      ...history,
-      { role: 'user', content: [{ type: 'input_text', text: userText }] }
-    ]
+    input: `Sen ${BOT_NAME} adında güçlü bir Telegram AI asistanısın.
+
+Önceki konuşmalar:
+${history || 'Yok'}
+
+Kullanıcının yeni mesajı:
+${userText}`
   });
 
   return response.output_text || 'Cevap alınamadı.';
 }
-
 async function analyzeImage(chatId, base64Image, prompt = 'Bu fotoğrafı detaylı ama kısa şekilde analiz et.') {
   const response = await openai.responses.create({
     model: VISION_MODEL,

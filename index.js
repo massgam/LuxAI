@@ -644,6 +644,46 @@ bot.on('polling_error', (err) => {
   console.error('polling_error', err.message);
 });
 
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    const message = String(req.body?.message || '').trim();
+    const user = req.body?.user || {};
+    const lang = String(req.body?.lang || user.language_code || '').toLowerCase();
+
+    if (!message) {
+      return res.status(400).json({ ok: false, error: 'Message is required' });
+    }
+
+    const fakeMsg = {
+      chat: { id: `webapp-${user.id || 'guest'}` },
+      from: {
+        id: user.id || 'webapp',
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        language_code: lang || ''
+      }
+    };
+
+    const langRule = languageInstruction(fakeMsg, message);
+    const reply = await askText(fakeMsg.chat.id, message, langRule);
+
+    addMemory(fakeMsg.chat.id, 'user', message);
+    addMemory(fakeMsg.chat.id, 'assistant', reply);
+    logAction(fakeMsg, 'mini_app_chat', message);
+
+    res.json({ ok: true, reply });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/chat error', err);
+    res.status(500).json({
+      ok: false,
+      error: err.message || 'Mini App chat failed'
+    });
+  }
+});
+
 app.get('/health', (_, res) => res.json({ ok: true, bot: BOT_NAME }));
 
 app.get('/admin-data', (_, res) => {

@@ -191,11 +191,18 @@ async function downloadTelegramFile(fileId, ext = '') {
 
 function isImageGenerationRequest(text) {
   const t = text.toLowerCase();
-  return [
-    'görsel oluştur', 'resim oluştur', 'fotoğraf oluştur', 'logo oluştur',
-    'görsel yap', 'resim yap', 'foto yap', 'tasarla', 'çiz',
-    'generate image', 'create image', 'draw', 'design a logo', 'make an image'
-  ].some(k => t.includes(k));
+
+  const imageWords = [
+    'görsel', 'resim', 'fotoğraf', 'foto', 'image', 'picture', 'photo',
+    'logo', 'afiş', 'poster', 'banner', 'tasarım', 'design', 'çizim'
+  ];
+
+  const actionWords = [
+    'oluştur', 'yap', 'tasarla', 'çiz', 'hazırla', 'üret', 'gönder',
+    'create', 'make', 'generate', 'draw', 'design'
+  ];
+
+  return imageWords.some(w => t.includes(w)) && actionWords.some(w => t.includes(w));
 }
 
 function isImageEditRequest(text) {

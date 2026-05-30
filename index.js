@@ -377,7 +377,16 @@ async function handleUserText(msg, text) {
   try {
     await bot.sendChatAction(chatId, 'typing');
 
-    if (lastPhoto && isImageEditRequest(text)) {
+    if (lastPhoto && isImageAnalyzeRequest(text)) {
+      await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🔍 Анализирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🔍 Аналізую фото...' : '🔍 Fotoğrafı analiz ediyorum...');
+      const answer = await analyzeImage(lastPhoto.base64, text, langRule);
+      stats.imageAnalyzed += 1;
+      logAction(msg, 'image_analyze', text, { photoFileId: lastPhoto.fileId });
+      await sendLong(chatId, answer);
+      return;
+    }
+
+    if (lastPhoto) {
       await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🎨 Редактирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🎨 Редагую фото...' : '🎨 Fotoğrafını düzenliyorum...');
       await bot.sendChatAction(chatId, 'upload_photo');
 
@@ -398,15 +407,6 @@ async function handleUserText(msg, text) {
       logAction(msg, 'image_generate', text);
 
       await bot.sendPhoto(chatId, image, { caption: getLanguageCode(msg, text) === 'ru' ? '✅ Изображение создано.' : getLanguageCode(msg, text) === 'uk' ? '✅ Зображення створено.' : '✅ Görsel oluşturuldu.' });
-      return;
-    }
-
-    if (lastPhoto && isImageAnalyzeRequest(text)) {
-      await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🔍 Анализирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🔍 Аналізую фото...' : '🔍 Fotoğrafı analiz ediyorum...');
-      const answer = await analyzeImage(lastPhoto.base64, text, langRule);
-      stats.imageAnalyzed += 1;
-      logAction(msg, 'image_analyze', text, { photoFileId: lastPhoto.fileId });
-      await sendLong(chatId, answer);
       return;
     }
 
@@ -645,6 +645,75 @@ bot.on('polling_error', (err) => {
 });
 
 
+function bufferToPublicImage(image) {
+  if (Buffer.isBuffer(image)) {
+    return `data:image/png;base64,${image.toString('base64')}`;
+  }
+  return String(image || '');
+}
+
+app.post('/api/upload-photo', async (req, res) => {
+  try {
+    const user = req.body?.user || {};
+    const imageBase64 = String(req.body?.imageBase64 || '');
+    const mime = String(req.body?.mime || 'image/jpeg');
+    const caption = String(req.body?.caption || '');
+
+    if (!imageBase64) {
+      return res.status(400).json({ ok: false, error: 'imageBase64 is required' });
+    }
+
+    const cleanBase64 = imageBase64.includes(',')
+      ? imageBase64.split(',').pop()
+      : imageBase64;
+
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const chatId = `webapp-${user.id || 'guest'}`;
+
+    const fakeMsg = {
+      chat: { id: chatId },
+      from: {
+        id: user.id || 'webapp',
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        language_code: user.language_code || ''
+      }
+    };
+
+    const ext = mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : '.jpg';
+    const tmp = path.join(os.tmpdir(), `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+    fs.writeFileSync(tmp, buffer);
+
+    const photoRecord = {
+      fileId: `miniapp-${Date.now()}`,
+      path: tmp,
+      buffer,
+      base64: buffer.toString('base64'),
+      mime,
+      filePath: tmp,
+      time: new Date().toLocaleString('tr-TR'),
+      user: userName(fakeMsg.from),
+      caption
+    };
+
+    lastPhotoByChat.set(String(chatId), photoRecord);
+    savedPhotos.unshift(photoRecord);
+    savedPhotos.splice(30);
+
+    stats.photos += 1;
+    logAction(fakeMsg, 'mini_app_photo', caption || 'Mini App photo uploaded', {
+      photoFileId: photoRecord.fileId
+    });
+
+    res.json({ ok: true, message: 'Photo uploaded' });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/upload-photo error', err);
+    res.status(500).json({ ok: false, error: err.message || 'Photo upload failed' });
+  }
+});
+
 app.post('/api/chat', async (req, res) => {
   try {
     const message = String(req.body?.message || '').trim();
@@ -666,14 +735,60 @@ app.post('/api/chat', async (req, res) => {
       }
     };
 
+    const chatId = fakeMsg.chat.id;
     const langRule = languageInstruction(fakeMsg, message);
-    const reply = await askText(fakeMsg.chat.id, message, langRule);
+    const lastPhoto = lastPhotoByChat.get(String(chatId));
 
-    addMemory(fakeMsg.chat.id, 'user', message);
-    addMemory(fakeMsg.chat.id, 'assistant', reply);
     logAction(fakeMsg, 'mini_app_chat', message);
 
-    res.json({ ok: true, reply });
+    if (lastPhoto && isImageAnalyzeRequest(message)) {
+      const answer = await analyzeImage(lastPhoto.base64, message, langRule);
+      stats.imageAnalyzed += 1;
+      logAction(fakeMsg, 'mini_app_image_analyze', message, { photoFileId: lastPhoto.fileId });
+
+      return res.json({ ok: true, type: 'text', reply: answer });
+    }
+
+    if (lastPhoto) {
+      const edited = await editImageFromPhoto(lastPhoto, message);
+      stats.imageEdited += 1;
+      logAction(fakeMsg, 'mini_app_image_edit', message, { photoFileId: lastPhoto.fileId });
+
+      return res.json({
+        ok: true,
+        type: 'image',
+        reply: getLanguageCode(fakeMsg, message) === 'ru'
+          ? '✅ Фото отредактировано.'
+          : getLanguageCode(fakeMsg, message) === 'uk'
+          ? '✅ Фото відредаговано.'
+          : '✅ Fotoğraf düzenlendi.',
+        image: bufferToPublicImage(edited)
+      });
+    }
+
+    if (isImageGenerationRequest(message)) {
+      const image = await generateImage(message);
+      stats.imageGenerated += 1;
+      logAction(fakeMsg, 'mini_app_image_generate', message);
+
+      return res.json({
+        ok: true,
+        type: 'image',
+        reply: getLanguageCode(fakeMsg, message) === 'ru'
+          ? '✅ Изображение создано.'
+          : getLanguageCode(fakeMsg, message) === 'uk'
+          ? '✅ Зображення створено.'
+          : '✅ Görsel oluşturuldu.',
+        image: bufferToPublicImage(image)
+      });
+    }
+
+    const reply = await askText(chatId, message, langRule);
+
+    addMemory(chatId, 'user', message);
+    addMemory(chatId, 'assistant', reply);
+
+    res.json({ ok: true, type: 'text', reply });
   } catch (err) {
     stats.errors += 1;
     console.error('mini app /api/chat error', err);

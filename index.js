@@ -1011,6 +1011,61 @@ app.post('/api/tts', async (req, res) => {
   }
 });
 
+
+app.post('/api/config', async (req, res) => {
+  try {
+    const user = req.body?.user || {};
+    const userId = String(user.id || '');
+    res.json({
+      ok: true,
+      isAdmin: Boolean(ADMIN_TELEGRAM_ID && userId === ADMIN_TELEGRAM_ID),
+      bot: BOT_NAME
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message || 'Config failed' });
+  }
+});
+
+app.post('/api/transcribe', async (req, res) => {
+  try {
+    const audioBase64 = String(req.body?.audioBase64 || '');
+    const mime = String(req.body?.mime || 'audio/webm');
+    const user = req.body?.user || {};
+
+    if (!audioBase64) {
+      return res.status(400).json({ ok: false, error: 'audioBase64 is required' });
+    }
+
+    const cleanBase64 = audioBase64.includes(',') ? audioBase64.split(',').pop() : audioBase64;
+    const buffer = Buffer.from(cleanBase64, 'base64');
+
+    const ext = mime.includes('mp4') ? '.mp4' : mime.includes('ogg') ? '.ogg' : mime.includes('mpeg') ? '.mp3' : '.webm';
+    const tmp = path.join(os.tmpdir(), `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+    fs.writeFileSync(tmp, buffer);
+
+    const transcript = await transcribeFile(tmp);
+
+    const fakeMsg = {
+      chat: { id: `webapp-${user.id || 'guest'}` },
+      from: {
+        id: user.id || 'webapp',
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        language_code: user.language_code || ''
+      }
+    };
+
+    logAction(fakeMsg, 'mini_app_voice_transcript', transcript);
+
+    res.json({ ok: true, transcript });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/transcribe error', err);
+    res.status(500).json({ ok: false, error: err.message || 'Voice transcription failed' });
+  }
+});
+
 app.get('/health', (_, res) => res.json({ ok: true, bot: BOT_NAME }));
 
 app.get('/admin-data', async (req, res) => {

@@ -53,14 +53,23 @@ function userName(from = {}) {
   return [from.first_name, from.last_name].filter(Boolean).join(' ') || 'Kullanıcı';
 }
 
-function getLangInstruction(msg) {
+function getLangInstruction(msg, text = '') {
+  const cleanText = String(text || '');
+
+  if (/[А-Яа-яЁё]/.test(cleanText)) {
+    return 'Kullanıcı Rusça yazıyor. Kesinlikle Rusça cevap ver.';
+  }
+
+  if (/[A-Za-z]/.test(cleanText) && !/[ÇĞİÖŞÜçğıöşü]/.test(cleanText)) {
+    return 'Kullanıcı İngilizce yazıyor olabilir. İngilizce cevap ver.';
+  }
+
   const code = String(msg?.from?.language_code || '').toLowerCase();
+
   if (code.startsWith('ru')) return 'Kullanıcının Telegram dili Rusça. Rusça cevap ver.';
   if (code.startsWith('en')) return 'Kullanıcının Telegram dili İngilizce. İngilizce cevap ver.';
-  if (code.startsWith('uk')) return 'Kullanıcının Telegram dili Ukraynaca. Ukraynaca cevap ver.';
-  if (code.startsWith('az')) return 'Kullanıcının Telegram dili Azerice. Azerice cevap ver.';
   if (code.startsWith('tr')) return 'Kullanıcının Telegram dili Türkçe. Türkçe cevap ver.';
-  if (code) return `Kullanıcının Telegram dil kodu ${code}. Cevabı bu dile uygun ver.`;
+
   return 'Kullanıcının yazdığı dili otomatik algıla ve aynı dilde cevap ver.';
 }
 

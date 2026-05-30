@@ -18,6 +18,8 @@ const TEXT_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
 const VISION_MODEL = process.env.OPENAI_VISION_MODEL || TEXT_MODEL;
 const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1';
 const TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL || 'gpt-4o-mini-transcribe';
+const TTS_MODEL = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
+const TTS_VOICE = process.env.OPENAI_TTS_VOICE || 'alloy';
 const PORT = Number(process.env.PORT || 8080);
 
 if (!TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN missing');
@@ -388,6 +390,18 @@ async function transcribeFile(filePath) {
     });
     return t.text || '';
   }
+}
+
+
+async function textToSpeechBuffer(text) {
+  const speech = await openai.audio.speech.create({
+    model: TTS_MODEL,
+    voice: TTS_VOICE,
+    input: String(text || '').slice(0, 4000),
+    format: 'mp3'
+  });
+
+  return Buffer.from(await speech.arrayBuffer());
 }
 
 async function downloadTelegramFile(fileId, fallbackExt = '') {
@@ -943,6 +957,29 @@ app.post('/api/upload-file', async (req, res) => {
     stats.errors += 1;
     console.error('mini app /api/upload-file error', err);
     res.status(500).json({ ok: false, error: err.message || 'File upload failed' });
+  }
+});
+
+
+app.post('/api/tts', async (req, res) => {
+  try {
+    const text = String(req.body?.text || '').trim();
+    if (!text) {
+      return res.status(400).json({ ok: false, error: 'Text is required' });
+    }
+
+    const audio = await textToSpeechBuffer(text);
+    res.json({
+      ok: true,
+      audio: `data:audio/mpeg;base64,${audio.toString('base64')}`
+    });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/tts error', err);
+    res.status(500).json({
+      ok: false,
+      error: err.message || 'TTS failed'
+    });
   }
 });
 

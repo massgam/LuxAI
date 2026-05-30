@@ -351,6 +351,7 @@ async function generateImage(prompt) {
     : image.url;
 }
 
+
 async function editImageFromPhoto(photoRecord, prompt) {
   const imageFile = await toFile(
     photoRecord.buffer,
@@ -383,26 +384,6 @@ function mimeFromFilePath(filePath = '') {
   return 'image/jpeg';
 }
 
-async function editImageFromPhoto(photoRecord, prompt) {
-  const mime = photoRecord.mime || 'image/jpeg';
-  const ext = mime === 'image/png' ? 'png' : mime === 'image/webp' ? 'webp' : 'jpg';
-
-  const imageFile = await toFile(photoRecord.buffer, `telegram-photo.${ext}`, { type: mime });
-
-  const result = await openai.images.edit({
-    model: IMAGE_MODEL,
-    image: imageFile,
-    prompt,
-    size: '1024x1024'
-  });
-
-  const image = result.data?.[0];
-  if (!image) throw new Error('Image edit returned no image');
-
-  return image.b64_json
-    ? Buffer.from(image.b64_json, 'base64')
-    : image.url;
-}
 
 async function transcribeFile(filePath) {
   try {

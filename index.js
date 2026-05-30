@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import pdf from 'pdf-parse';
+import pg from 'pg';
 
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
@@ -28,6 +29,93 @@ const app = express();
 
 app.use(express.json({ limit: '30mb' }));
 app.use(express.static('public'));
+
+const { Pool } = pg;
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes('railway') ? { rejectUnauthorized: false } : undefined
+    })
+  : null;
+
+async function initDb() {
+  if (!pool) return;
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS luxai_users (
+      id TEXT PRIMARY KEY,
+      username TEXT,
+      first_name TEXT,
+      last_name TEXT,
+      language_code TEXT,
+      first_seen TIMESTAMPTZ DEFAULT NOW(),
+      last_seen TIMESTAMPTZ DEFAULT NOW(),
+      messages INTEGER DEFAULT 0
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS luxai_actions (
+      id BIGSERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      user_id TEXT,
+      username TEXT,
+      lang TEXT,
+      type TEXT,
+      text TEXT,
+      photo_file_id TEXT
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS luxai_photos (
+      id BIGSERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      user_id TEXT,
+      username TEXT,
+      caption TEXT,
+      mime TEXT,
+      image_base64 TEXT
+    );
+  `);
+}
+
+initDb().catch(err => console.error('DB init error', err.message));
+
+async function dbSaveUser(msg) {
+  if (!pool) return;
+  const from = msg.from || {};
+  const id = String(from.id || msg.chat?.id || '');
+  if (!id) return;
+  await pool.query(
+    `INSERT INTO luxai_users (id, username, first_name, last_name, language_code, messages)
+     VALUES ($1,$2,$3,$4,$5,1)
+     ON CONFLICT (id) DO UPDATE SET
+       username=EXCLUDED.username,
+       first_name=EXCLUDED.first_name,
+       last_name=EXCLUDED.last_name,
+       language_code=EXCLUDED.language_code,
+       last_seen=NOW(),
+       messages=luxai_users.messages+1`,
+    [id, from.username || '', from.first_name || '', from.last_name || '', from.language_code || '']
+  );
+}
+
+async function dbSaveAction(item) {
+  if (!pool) return;
+  await pool.query(
+    `INSERT INTO luxai_actions (user_id, username, lang, type, text, photo_file_id)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [String(item.userId || ''), item.user || '', item.lang || '', item.type || '', item.text || '', item.photoFileId || '']
+  );
+}
+
+async function dbSavePhoto(record, msg) {
+  if (!pool) return;
+  await pool.query(
+    `INSERT INTO luxai_photos (user_id, username, caption, mime, image_base64)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [String(msg.from?.id || ''), userName(msg.from), record.caption || '', record.mime || '', record.base64 || '']
+  );
+}
+
 
 const memory = new Map();
 const lastPhotoByChat = new Map();
@@ -150,6 +238,7 @@ function registerUser(msg) {
   u.messages += 1;
   u.lastSeen = new Date().toISOString();
   u.language_code = from.language_code || u.language_code || '';
+  dbSaveUser(msg).catch(err => console.error('DB user save error', err.message));
 }
 
 function logAction(msg, type, text = '', extra = {}) {
@@ -169,6 +258,7 @@ function logAction(msg, type, text = '', extra = {}) {
 
   stats.actions.unshift(item);
   stats.actions = stats.actions.slice(0, 250);
+  dbSaveAction(item).catch(err => console.error('DB action save error', err.message));
 }
 
 function addMemory(chatId, role, content) {
@@ -517,6 +607,7 @@ bot.on('photo', async (msg) => {
     lastPhotoByChat.set(String(chatId), photoRecord);
     savedPhotos.unshift(photoRecord);
     savedPhotos.splice(30);
+    dbSavePhoto(photoRecord, msg).catch(err => console.error('DB photo save error', err.message));
 
     logAction(msg, 'photo', msg.caption || 'Fotoğraf gönderildi', { photoFileId: best.file_id });
 
@@ -700,6 +791,7 @@ app.post('/api/upload-photo', async (req, res) => {
     lastPhotoByChat.set(String(chatId), photoRecord);
     savedPhotos.unshift(photoRecord);
     savedPhotos.splice(30);
+    dbSavePhoto(photoRecord, fakeMsg).catch(err => console.error('DB mini photo save error', err.message));
 
     stats.photos += 1;
     logAction(fakeMsg, 'mini_app_photo', caption || 'Mini App photo uploaded', {
@@ -799,23 +891,109 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+
+app.post('/api/upload-file', async (req, res) => {
+  try {
+    const user = req.body?.user || {};
+    const fileBase64 = String(req.body?.fileBase64 || '');
+    const fileName = String(req.body?.fileName || 'file');
+    const mime = String(req.body?.mime || '');
+    const lang = String(req.body?.lang || user.language_code || '').toLowerCase();
+
+    if (!fileBase64) {
+      return res.status(400).json({ ok: false, error: 'fileBase64 is required' });
+    }
+
+    const cleanBase64 = fileBase64.includes(',') ? fileBase64.split(',').pop() : fileBase64;
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const ext = path.extname(fileName).toLowerCase();
+
+    const fakeMsg = {
+      chat: { id: `webapp-${user.id || 'guest'}` },
+      from: {
+        id: user.id || 'webapp',
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        language_code: lang || ''
+      }
+    };
+
+    let text = '';
+    if (ext === '.pdf' || mime.includes('pdf')) {
+      const data = await pdf(buffer);
+      text = data.text || '';
+    } else if (['.txt', '.md', '.csv', '.json'].includes(ext) || mime.startsWith('text/')) {
+      text = buffer.toString('utf8');
+    } else {
+      return res.status(400).json({ ok: false, error: 'Supported files: PDF, TXT, MD, CSV, JSON' });
+    }
+
+    const limited = text.slice(0, 12000);
+    logAction(fakeMsg, 'mini_app_file', `${fileName}\n${limited.slice(0, 500)}`);
+
+    const reply = await askText(
+      fakeMsg.chat.id,
+      `Analyze this file:\n\n${limited}`,
+      languageInstruction(fakeMsg, limited)
+    );
+
+    res.json({ ok: true, type: 'text', reply });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/upload-file error', err);
+    res.status(500).json({ ok: false, error: err.message || 'File upload failed' });
+  }
+});
+
 app.get('/health', (_, res) => res.json({ ok: true, bot: BOT_NAME }));
 
-app.get('/admin-data', (_, res) => {
-  res.json({
-    stats: {
-      ...stats,
-      users: Array.from(stats.users.values())
-    },
-    lastActions: stats.actions.slice(0, 50),
-    photos: savedPhotos.slice(0, 20).map(p => ({
-      time: p.time,
-      user: p.user,
-      caption: p.caption,
-      fileId: p.fileId,
-      mime: p.mime
-    }))
-  });
+app.get('/admin-data', async (req, res) => {
+  try {
+    const userId = String(req.query.userId || req.query.adminId || '');
+    if (ADMIN_TELEGRAM_ID && userId !== ADMIN_TELEGRAM_ID) {
+      return res.status(403).json({ ok: false, error: 'Forbidden' });
+    }
+
+    let dbUsers = [];
+    let dbActions = [];
+    let dbPhotos = [];
+
+    if (pool) {
+      const usersResult = await pool.query('SELECT * FROM luxai_users ORDER BY last_seen DESC LIMIT 200');
+      const actionsResult = await pool.query('SELECT * FROM luxai_actions ORDER BY created_at DESC LIMIT 100');
+      const photosResult = await pool.query('SELECT id, created_at, user_id, username, caption, mime FROM luxai_photos ORDER BY created_at DESC LIMIT 100');
+      dbUsers = usersResult.rows;
+      dbActions = actionsResult.rows;
+      dbPhotos = photosResult.rows;
+    }
+
+    res.json({
+      ok: true,
+      stats: {
+        ...stats,
+        users: Array.from(stats.users.values())
+      },
+      db: {
+        enabled: Boolean(pool),
+        users: dbUsers,
+        actions: dbActions,
+        photos: dbPhotos
+      },
+      lastActions: stats.actions.slice(0, 100),
+      photos: savedPhotos.slice(0, 30).map(p => ({
+        time: p.time,
+        user: p.user,
+        caption: p.caption,
+        fileId: p.fileId,
+        mime: p.mime,
+        image: p.base64 ? `data:${p.mime || 'image/jpeg'};base64,${p.base64}` : ''
+      }))
+    });
+  } catch (err) {
+    console.error('admin-data error', err);
+    res.status(500).json({ ok: false, error: err.message || 'Admin data failed' });
+  }
 });
 
 app.listen(PORT, () => {

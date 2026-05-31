@@ -8,6 +8,8 @@ import os from 'os';
 import path from 'path';
 import pdf from 'pdf-parse';
 import pg from 'pg';
+import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
 
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || '').trim();
@@ -554,14 +556,30 @@ async function downloadTelegramFile(fileId, fallbackExt = '') {
 }
 
 function isImageGenerationRequest(text = '') {
-  const t = text.toLowerCase();
+  const t = String(text || '').toLowerCase().trim();
+
+  // Mini App image screen sends this prefix, always generate new image
+  if (
+    t.startsWith('görsel oluştur:') ||
+    t.startsWith('create image:') ||
+    t.startsWith('создай изображение:') ||
+    t.startsWith('створи зображення:')
+  ) {
+    return true;
+  }
 
   const imageWords = [
     'görsel', 'resim', 'fotoğraf', 'foto', 'image', 'picture', 'photo',
     'logo', 'afiş', 'poster', 'banner', 'tasarım', 'design', 'çizim',
-    'wallpaper', 'kapak', 'reklam görseli',
+    'wallpaper', 'kapak', 'reklam görseli', 'sahne', 'manzara',
+    'insan', 'kişi', 'adam', 'erkek', 'kadın', 'çocuk', 'kız', 'portre',
+    'at', 'fare', 'kedi', 'köpek', 'hayvan', 'araba', 'ev', 'şehir',
+    'person', 'people', 'man', 'woman', 'boy', 'girl', 'portrait',
+    'horse', 'mouse', 'cat', 'dog', 'animal', 'car', 'city',
     'изображение', 'картинка', 'фото', 'логотип', 'постер', 'баннер', 'дизайн', 'нарисуй',
-    'зображення', 'картинка', 'фото', 'логотип', 'постер', 'банер', 'дизайн', 'намалюй'
+    'человек', 'люди', 'мужчина', 'женщина', 'портрет', 'лошадь', 'мышь',
+    'зображення', 'картинка', 'фото', 'логотип', 'постер', 'банер', 'дизайн', 'намалюй',
+    'людина', 'люди', 'чоловік', 'жінка', 'портрет', 'кінь', 'миша'
   ];
 
   const actionWords = [
@@ -854,10 +872,24 @@ bot.on('document', async (msg) => {
     if (ext === '.pdf') {
       const data = await pdf(buffer);
       text = data.text || '';
+    } else if (ext === '.docx') {
+      const data = await mammoth.extractRawText({ buffer });
+      text = data.value || '';
+    } else if (['.xlsx', '.xls'].includes(ext)) {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      text = workbook.SheetNames.map(name => {
+        const sheet = workbook.Sheets[name];
+        return `Sheet: ${name}\n${XLSX.utils.sheet_to_csv(sheet)}`;
+      }).join('\n\n');
     } else if (['.txt', '.md', '.csv', '.json'].includes(ext)) {
       text = buffer.toString('utf8');
     } else {
-      await bot.sendMessage(chatId, 'Bu dosya türünü şu an okuyamıyorum. PDF, TXT, MD, CSV, JSON gönder.');
+      await bot.sendMessage(chatId, 'Bu dosya türünü şu an okuyamıyorum. PDF, DOCX, XLSX, TXT, MD, CSV, JSON gönder.');
+      return;
+    }
+
+    if (!text.trim()) {
+      await bot.sendMessage(chatId, '❌ Dosyadan okunabilir metin çıkaramadım. Tarama PDF ise OCR desteği gerekir.');
       return;
     }
 
@@ -1074,10 +1106,23 @@ app.post('/api/upload-file', async (req, res) => {
     if (ext === '.pdf' || mime.includes('pdf')) {
       const data = await pdf(buffer);
       text = data.text || '';
+    } else if (ext === '.docx') {
+      const data = await mammoth.extractRawText({ buffer });
+      text = data.value || '';
+    } else if (['.xlsx', '.xls'].includes(ext)) {
+      const workbook = XLSX.read(buffer, { type: 'buffer' });
+      text = workbook.SheetNames.map(name => {
+        const sheet = workbook.Sheets[name];
+        return `Sheet: ${name}\n${XLSX.utils.sheet_to_csv(sheet)}`;
+      }).join('\n\n');
     } else if (['.txt', '.md', '.csv', '.json'].includes(ext) || mime.startsWith('text/')) {
       text = buffer.toString('utf8');
     } else {
-      return res.status(400).json({ ok: false, error: 'Supported files: PDF, TXT, MD, CSV, JSON' });
+      return res.status(400).json({ ok: false, error: 'Supported files: PDF, DOCX, XLSX, TXT, MD, CSV, JSON' });
+    }
+
+    if (!text.trim()) {
+      return res.status(400).json({ ok: false, error: 'Dosyadan okunabilir metin çıkaramadım. Tarama PDF ise OCR desteği gerekir.' });
     }
 
     const limited = text.slice(0, 12000);

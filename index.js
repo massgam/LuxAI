@@ -1155,6 +1155,9 @@ app.post('/api/config', async (req, res) => {
     const username = String(user.username || '').replace('@', '').toLowerCase();
     const adminUsername = String(process.env.ADMIN_TELEGRAM_USERNAME || '').replace('@', '').toLowerCase();
 
+    const country =
+      String(req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || '').toUpperCase();
+
     const isAdmin =
       Boolean(ADMIN_TELEGRAM_ID && userId === String(ADMIN_TELEGRAM_ID)) ||
       Boolean(adminUsername && username === adminUsername);
@@ -1162,7 +1165,8 @@ app.post('/api/config', async (req, res) => {
     res.json({
       ok: true,
       isAdmin,
-      bot: BOT_NAME
+      bot: BOT_NAME,
+      country
     });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message || 'Config failed' });

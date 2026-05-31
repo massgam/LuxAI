@@ -614,6 +614,18 @@ async function handleUserText(msg, text) {
   try {
     await bot.sendChatAction(chatId, 'typing');
 
+    if (isImageGenerationRequest(text)) {
+      await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🖼️ Создаю изображение...' : getLanguageCode(msg, text) === 'uk' ? '🖼️ Створюю зображення...' : '🖼️ Görsel oluşturuyorum...');
+      await bot.sendChatAction(chatId, 'upload_photo');
+
+      const image = await generateImage(text);
+      stats.imageGenerated += 1;
+      logAction(msg, 'image_generate', text);
+
+      await bot.sendPhoto(chatId, image, { caption: getLanguageCode(msg, text) === 'ru' ? '✅ Изображение создано.' : getLanguageCode(msg, text) === 'uk' ? '✅ Зображення створено.' : '✅ Görsel oluşturuldu.' });
+      return;
+    }
+
     if (lastPhoto && isImageAnalyzeRequest(text)) {
       await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🔍 Анализирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🔍 Аналізую фото...' : '🔍 Fotoğrafı analiz ediyorum...');
       const answer = await analyzeImage(lastPhoto.base64, text, langRule);
@@ -632,18 +644,6 @@ async function handleUserText(msg, text) {
       logAction(msg, 'image_edit', text, { photoFileId: lastPhoto.fileId });
 
       await bot.sendPhoto(chatId, edited, { caption: getLanguageCode(msg, text) === 'ru' ? '✅ Фото отредактировано.' : getLanguageCode(msg, text) === 'uk' ? '✅ Фото відредаговано.' : '✅ Fotoğraf düzenlendi.' });
-      return;
-    }
-
-    if (isImageGenerationRequest(text)) {
-      await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🖼️ Создаю изображение...' : getLanguageCode(msg, text) === 'uk' ? '🖼️ Створюю зображення...' : '🖼️ Görsel oluşturuyorum...');
-      await bot.sendChatAction(chatId, 'upload_photo');
-
-      const image = await generateImage(text);
-      stats.imageGenerated += 1;
-      logAction(msg, 'image_generate', text);
-
-      await bot.sendPhoto(chatId, image, { caption: getLanguageCode(msg, text) === 'ru' ? '✅ Изображение создано.' : getLanguageCode(msg, text) === 'uk' ? '✅ Зображення створено.' : '✅ Görsel oluşturuldu.' });
       return;
     }
 
@@ -982,6 +982,23 @@ app.post('/api/chat', async (req, res) => {
 
     logAction(fakeMsg, 'mini_app_chat', message);
 
+    if (isImageGenerationRequest(message)) {
+      const image = await generateImage(message);
+      stats.imageGenerated += 1;
+      logAction(fakeMsg, 'mini_app_image_generate', message);
+
+      return res.json({
+        ok: true,
+        type: 'image',
+        reply: getLanguageCode(fakeMsg, message) === 'ru'
+          ? '✅ Изображение создано.'
+          : getLanguageCode(fakeMsg, message) === 'uk'
+          ? '✅ Зображення створено.'
+          : '✅ Görsel oluşturuldu.',
+        image: bufferToPublicImage(image)
+      });
+    }
+
     if (lastPhoto && isImageAnalyzeRequest(message)) {
       const answer = await analyzeImage(lastPhoto.base64, message, langRule);
       stats.imageAnalyzed += 1;
@@ -1004,23 +1021,6 @@ app.post('/api/chat', async (req, res) => {
           ? '✅ Фото відредаговано.'
           : '✅ Fotoğraf düzenlendi.',
         image: bufferToPublicImage(edited)
-      });
-    }
-
-    if (isImageGenerationRequest(message)) {
-      const image = await generateImage(message);
-      stats.imageGenerated += 1;
-      logAction(fakeMsg, 'mini_app_image_generate', message);
-
-      return res.json({
-        ok: true,
-        type: 'image',
-        reply: getLanguageCode(fakeMsg, message) === 'ru'
-          ? '✅ Изображение создано.'
-          : getLanguageCode(fakeMsg, message) === 'uk'
-          ? '✅ Зображення створено.'
-          : '✅ Görsel oluşturuldu.',
-        image: bufferToPublicImage(image)
       });
     }
 

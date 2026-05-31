@@ -386,8 +386,7 @@ async function sendLong(chatId, text, options = {}) {
 async function askText(chatId, userText, langRule = '', userId = '') {
   const shortHistory = getMemory(chatId)
     .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-    .join('
-');
+    .join('\n');
 
   const longHistory = await dbGetUserMemory(userId, 24).catch(() => '');
 

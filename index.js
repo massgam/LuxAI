@@ -21,6 +21,10 @@ const TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL || 'gpt-4o-mini-tra
 const TTS_MODEL = process.env.OPENAI_TTS_MODEL || 'gpt-4o-mini-tts';
 const TTS_VOICE = process.env.OPENAI_TTS_VOICE || 'alloy';
 const PORT = Number(process.env.PORT || 8080);
+const WEBAPP_URL =
+  process.env.WEBAPP_URL ||
+  process.env.PUBLIC_URL ||
+  (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'https://luxai-production-8f48.up.railway.app');
 
 if (!TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN missing');
 if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY missing');
@@ -77,6 +81,18 @@ async function initDb() {
       image_base64 TEXT
     );
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS luxai_messages (
+      id BIGSERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      chat_id TEXT,
+      user_id TEXT,
+      username TEXT,
+      role TEXT,
+      content TEXT,
+      lang TEXT
+    );
+  `);
 }
 
 initDb().catch(err => console.error('DB init error', err.message));
@@ -118,6 +134,60 @@ async function dbSavePhoto(record, msg) {
   );
 }
 
+
+async function dbSaveMessage(msg, role, content, lang = '') {
+  if (!pool) return;
+  const from = msg.from || {};
+  await pool.query(
+    `INSERT INTO luxai_messages (chat_id, user_id, username, role, content, lang)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [
+      String(msg.chat?.id || ''),
+      String(from.id || ''),
+      userName(from),
+      role,
+      String(content || '').slice(0, 8000),
+      lang || getLanguageCode(msg, content)
+    ]
+  );
+}
+
+async function dbGetUserMemory(userId, limit = 24) {
+  if (!pool || !userId) return '';
+  const result = await pool.query(
+    `SELECT role, content FROM luxai_messages
+     WHERE user_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [String(userId), limit]
+  );
+  return result.rows.reverse()
+    .map(r => `${r.role === 'user' ? 'User' : 'Assistant'}: ${r.content}`)
+    .join('\n');
+}
+
+function isWebSearchRequest(text = '') {
+  const t = String(text || '').toLowerCase();
+  return [
+    'bugün', 'şu an', 'son durum', 'güncel', 'haber', 'fiyat', 'piyasa',
+    'kripto ne durumda', 'hava durumu', 'latest', 'today', 'current', 'news',
+    'price', 'market', 'сегодня', 'сейчас', 'новости', 'курс', 'цена',
+    'сьогодні', 'зараз', 'новини', 'ціна'
+  ].some(k => t.includes(k));
+}
+
+function startKeyboard() {
+  return {
+    inline_keyboard: [
+      [{ text: '🚀 LuxAI Aç', web_app: { url: WEBAPP_URL } }],
+      [
+        { text: '🎨 Görsel Oluştur', web_app: { url: `${WEBAPP_URL}?mode=studio` } },
+        { text: '🎙️ Sesli Asistan', web_app: { url: `${WEBAPP_URL}?mode=voice` } }
+      ],
+      [{ text: '📄 Dosya / Foto Analizi', web_app: { url: `${WEBAPP_URL}?mode=files` } }]
+    ]
+  };
+}
 
 const memory = new Map();
 const lastPhotoByChat = new Map();
@@ -199,24 +269,56 @@ function startMessage(msg) {
   if (code === 'ru') {
     return `👋 Добро пожаловать ${name}
 
-Я ${BOT_NAME} Pro.`;
+✨ ${BOT_NAME} Pro готов.
+
+🎨 Создание изображений
+🖼️ Редактирование фото
+🎙️ Голосовой ассистент
+📄 Анализ файлов
+🌍 Русский • Türkçe • Українська • English
+
+👇 Нажмите кнопку ниже, чтобы открыть Mini App.`;
   }
 
   if (code === 'uk') {
     return `👋 Ласкаво просимо ${name}
 
-Я ${BOT_NAME} Pro.`;
+✨ ${BOT_NAME} Pro готовий.
+
+🎨 Створення зображень
+🖼️ Редагування фото
+🎙️ Голосовий асистент
+📄 Аналіз файлів
+🌍 Українська • Türkçe • Русский • English
+
+👇 Натисніть кнопку нижче, щоб відкрити Mini App.`;
   }
 
   if (code === 'en') {
     return `👋 Welcome ${name}
 
-I am ${BOT_NAME} Pro.`;
+✨ ${BOT_NAME} Pro is ready.
+
+🎨 Image generation
+🖼️ Photo editing
+🎙️ Voice assistant
+📄 File analysis
+🌍 English • Türkçe • Русский • Українська
+
+👇 Tap the button below to open the Mini App.`;
   }
 
   return `👋 Hoş geldin ${name}
 
-Ben ${BOT_NAME} Pro.`;
+✨ ${BOT_NAME} Pro hazır.
+
+🎨 Görsel oluşturma
+🖼️ Fotoğraf düzenleme
+🎙️ Sesli asistan
+📄 Dosya analizi
+🌍 Türkçe • Русский • Українська • English
+
+👇 Mini App'i açmak için aşağıdaki butona dokun.`;
 }
 
 function registerUser(msg) {
@@ -281,14 +383,15 @@ async function sendLong(chatId, text, options = {}) {
   }
 }
 
-async function askText(chatId, userText, langRule = '') {
-  const history = getMemory(chatId)
+async function askText(chatId, userText, langRule = '', userId = '') {
+  const shortHistory = getMemory(chatId)
     .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
-    .join('\n');
+    .join('
+');
 
-  const response = await openai.responses.create({
-    model: TEXT_MODEL,
-    input: `You are ${BOT_NAME}, a powerful professional Telegram AI assistant.
+  const longHistory = await dbGetUserMemory(userId, 24).catch(() => '');
+
+  const input = `You are ${BOT_NAME}, a powerful professional Telegram AI assistant.
 
 Language rule:
 ${langRule || 'Detect the user language and reply in the same language.'}
@@ -297,15 +400,25 @@ Important rules:
 - Never send image links when user asks for an image.
 - If the user requests an image, logo, poster, banner, design, drawing or photo generation, the bot system will generate it automatically.
 - If the user sends a photo and asks to change/add/remove/replace something, the bot system will edit the photo automatically.
+- If fresh/current information is needed, use web search.
 - Be short, helpful and professional.
 
-Conversation memory:
-${history || 'No previous conversation.'}
+Long-term user memory from PostgreSQL:
+${longHistory || 'No long-term memory yet.'}
+
+Recent conversation memory:
+${shortHistory || 'No recent conversation.'}
 
 User message:
-${userText}`
-  });
+${userText}`;
 
+  const payload = { model: TEXT_MODEL, input };
+
+  if (isWebSearchRequest(userText)) {
+    payload.tools = [{ type: 'web_search_preview' }];
+  }
+
+  const response = await openai.responses.create(payload);
   return response.output_text || 'Cevap alınamadı.';
 }
 
@@ -523,9 +636,11 @@ async function handleUserText(msg, text) {
       return;
     }
 
-    const reply = await askText(chatId, text, langRule);
+    await dbSaveMessage(msg, 'user', text, getLanguageCode(msg, text)).catch(err => console.error('DB user message save error', err.message));
+    const reply = await askText(chatId, text, langRule, msg.from?.id);
     addMemory(chatId, 'user', text);
     addMemory(chatId, 'assistant', reply);
+    await dbSaveMessage(msg, 'assistant', reply, getLanguageCode(msg, text)).catch(err => console.error('DB assistant message save error', err.message));
     await sendLong(chatId, reply);
   } catch (err) {
     stats.errors += 1;
@@ -537,7 +652,7 @@ async function handleUserText(msg, text) {
 
 bot.onText(/\/start/, async (msg) => {
   logAction(msg, 'start', '/start');
-  await bot.sendMessage(msg.chat.id, startMessage(msg));
+  await bot.sendMessage(msg.chat.id, startMessage(msg), { reply_markup: startKeyboard() });
 });
 
 bot.onText(/\/clear/, async (msg) => {
@@ -898,10 +1013,12 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    const reply = await askText(chatId, message, langRule);
+    await dbSaveMessage(fakeMsg, 'user', message, getLanguageCode(fakeMsg, message)).catch(err => console.error('DB mini user message save error', err.message));
+    const reply = await askText(chatId, message, langRule, fakeMsg.from.id);
 
     addMemory(chatId, 'user', message);
     addMemory(chatId, 'assistant', reply);
+    await dbSaveMessage(fakeMsg, 'assistant', reply, getLanguageCode(fakeMsg, message)).catch(err => console.error('DB mini assistant message save error', err.message));
 
     res.json({ ok: true, type: 'text', reply });
   } catch (err) {
@@ -970,6 +1087,45 @@ app.post('/api/upload-file', async (req, res) => {
 });
 
 
+
+app.post('/api/transcribe', async (req, res) => {
+  try {
+    const audioBase64 = String(req.body?.audioBase64 || '');
+    const mime = String(req.body?.mime || 'audio/webm');
+    const user = req.body?.user || {};
+
+    if (!audioBase64) {
+      return res.status(400).json({ ok: false, error: 'audioBase64 is required' });
+    }
+
+    const cleanBase64 = audioBase64.includes(',') ? audioBase64.split(',').pop() : audioBase64;
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const ext = mime.includes('mp4') ? '.mp4' : mime.includes('ogg') ? '.ogg' : mime.includes('mpeg') ? '.mp3' : '.webm';
+    const tmp = path.join(os.tmpdir(), `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+    fs.writeFileSync(tmp, buffer);
+
+    const transcript = await transcribeFile(tmp);
+
+    const fakeMsg = {
+      chat: { id: `webapp-${user.id || 'guest'}` },
+      from: {
+        id: user.id || 'webapp',
+        username: user.username || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        language_code: user.language_code || ''
+      }
+    };
+
+    logAction(fakeMsg, 'mini_app_voice_transcript', transcript);
+    res.json({ ok: true, transcript });
+  } catch (err) {
+    stats.errors += 1;
+    console.error('mini app /api/transcribe error', err);
+    res.status(500).json({ ok: false, error: err.message || 'Voice transcription failed' });
+  }
+});
+
 app.post('/api/tts', async (req, res) => {
   try {
     const text = String(req.body?.text || '').trim();
@@ -1033,15 +1189,45 @@ app.get('/admin-data', async (req, res) => {
     let dbUsers = [];
     let dbActions = [];
     let dbPhotos = [];
+    let dbMessages = [];
 
-    if (typeof pool !== 'undefined' && pool) {
+    if (pool) {
       try {
         const usersResult = await pool.query('SELECT * FROM luxai_users ORDER BY last_seen DESC LIMIT 500');
         const actionsResult = await pool.query('SELECT * FROM luxai_actions ORDER BY created_at DESC LIMIT 1000');
         const photosResult = await pool.query('SELECT id, created_at, user_id, username, caption, mime, image_base64 FROM luxai_photos ORDER BY created_at DESC LIMIT 300');
+        const messagesResult = await pool.query('SELECT id, created_at, chat_id, user_id, username, role, content, lang FROM luxai_messages ORDER BY created_at DESC LIMIT 1500');
+
         dbUsers = usersResult.rows;
-        dbActions = actionsResult.rows;
-        dbPhotos = photosResult.rows;
+        dbActions = actionsResult.rows.map(a => ({
+          time: a.created_at,
+          userId: a.user_id,
+          user: a.username || a.user_id || 'Unknown',
+          username: a.username || '',
+          lang: a.lang,
+          type: a.type,
+          text: a.text,
+          photoFileId: a.photo_file_id
+        }));
+        dbPhotos = photosResult.rows.map(p => ({
+          time: p.created_at,
+          userId: p.user_id,
+          user: p.username || p.user_id || 'Unknown',
+          username: p.username || p.user_id || 'Unknown',
+          caption: p.caption || '',
+          mime: p.mime || 'image/jpeg',
+          image: p.image_base64 ? `data:${p.mime || 'image/jpeg'};base64,${p.image_base64}` : ''
+        }));
+        dbMessages = messagesResult.rows.map(m => ({
+          time: m.created_at,
+          userId: m.user_id,
+          user: m.username || m.user_id || 'Unknown',
+          username: m.username || '',
+          lang: m.lang,
+          type: `chat_${m.role}`,
+          role: m.role,
+          text: m.content
+        }));
       } catch (dbErr) {
         console.error('admin db read error', dbErr.message);
       }
@@ -1059,15 +1245,6 @@ app.get('/admin-data', async (req, res) => {
       image: p.base64 ? `data:${p.mime || 'image/jpeg'};base64,${p.base64}` : ''
     }));
 
-    const dbPhotosMapped = dbPhotos.map(p => ({
-      time: p.created_at,
-      user: p.username || p.user_id || 'Unknown',
-      username: p.username || p.user_id || 'Unknown',
-      caption: p.caption || '',
-      mime: p.mime || 'image/jpeg',
-      image: p.image_base64 ? `data:${p.mime || 'image/jpeg'};base64,${p.image_base64}` : ''
-    }));
-
     res.json({
       ok: true,
       stats: {
@@ -1075,13 +1252,14 @@ app.get('/admin-data', async (req, res) => {
         users: memoryUsers
       },
       db: {
-        enabled: Boolean(typeof pool !== 'undefined' && pool),
+        enabled: Boolean(pool),
         users: dbUsers,
         actions: dbActions,
-        photos: dbPhotosMapped
+        photos: dbPhotos,
+        messages: dbMessages
       },
-      lastActions: memoryActions,
-      photos: [...memoryPhotos, ...dbPhotosMapped]
+      lastActions: [...dbMessages, ...dbActions, ...memoryActions],
+      photos: [...memoryPhotos, ...dbPhotos]
     });
   } catch (err) {
     console.error('admin-data error', err);

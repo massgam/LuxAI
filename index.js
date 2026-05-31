@@ -473,10 +473,22 @@ function mimeFromFilePath(filePath = '') {
 
 
 async function editImageFromPhoto(photoRecord, prompt) {
+  const rawMime = String(photoRecord.mime || 'image/jpeg').toLowerCase();
+
+  const mime =
+    rawMime.includes('png') ? 'image/png' :
+    rawMime.includes('webp') ? 'image/webp' :
+    'image/jpeg';
+
+  const ext =
+    mime === 'image/png' ? 'png' :
+    mime === 'image/webp' ? 'webp' :
+    'jpg';
+
   const imageFile = await toFile(
     photoRecord.buffer,
-    'telegram-photo.png',
-    { type: 'image/png' }
+    `telegram-photo.${ext}`,
+    { type: mime }
   );
 
   const result = await openai.images.edit({

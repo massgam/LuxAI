@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>LuxAI Pro</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="side-backdrop" id="sideBackdrop"></div>
+
+  <div class="voice-overlay" id="voiceOverlay">
+    <button class="close-voice" id="closeVoice">×</button>
+    <div class="voice-orb" id="voiceOrb">🎙️</div>
+    <h2 id="voiceTitle">Voice Mode</h2>
+    <p id="voiceText">Tap the microphone and speak</p>
+    <button class="voice-main" id="voiceMainBtn">Start</button>
+  </div>
+
+  <aside class="drawer" id="sidebar">
+    <div class="drawer-head">
+      <div class="logo-mini">L</div>
+      <div>
+        <h2>LuxAI Pro</h2>
+        <p>AI Studio</p>
+      </div>
+    </div>
+    <button class="drawer-action" id="newChat">＋ New Chat</button>
+    <button class="drawer-item active" data-mode="chat">🏠 Ana Sayfa</button>
+    <button class="drawer-item" data-mode="studio">✨ AI Studio</button>
+    <button class="drawer-item" data-mode="edit">🖼️ Fotoğraf Düzenle</button>
+    <button class="drawer-item" data-mode="files">📄 Dosya Analizi</button>
+    <button class="drawer-item" data-mode="voice">🎙️ Sesli Asistan</button>
+    <button class="drawer-item" data-mode="history">🕘 Geçmiş</button>
+    <button class="drawer-item admin-only" data-mode="admin">🛡️ Admin Panel</button>
+  </aside>
+
+  <main class="app" id="mainArea">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn">☰</button>
+      <div class="top-title">
+        <strong>LuxAI Pro</strong>
+        <span>PRO</span>
+      </div>
+      <div class="avatar" id="avatar">A</div>
+    </header>
+
+    <section class="hero" id="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-content">
+        <p class="hello" id="helloText">Merhaba, Alex! 👋</p>
+        <h1>Geleceği birlikte şekillendirelim.</h1>
+        <button class="start-btn" id="startChatBtn">Sohbete Başla</button>
+      </div>
+      <div class="robot">
+        <div class="robot-head"><span></span><span></span></div>
+        <div class="robot-body"></div>
+      </div>
+    </section>
+
+    <section class="quick-grid" id="studioPanel">
+      <button data-prompt="Profesyonel lüks bir görsel oluştur">
+        <span>🎨</span><strong>Görsel Oluştur</strong><small>Metinden görsel</small>
+      </button>
+      <button id="quickPhoto">
+        <span>🖼️</span><strong>Fotoğraf Düzenle</strong><small>Fotoğrafını geliştir</small>
+      </button>
+      <button id="quickVoice">
+        <span>🎙️</span><strong>Sesli Asistan</strong><small>Konuş ve dinle</small>
+      </button>
+      <button id="quickFile">
+        <span>📄</span><strong>Dosya Analizi</strong><small>PDF, TXT, CSV</small>
+      </button>
+    </section>
+
+    <section class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="spark">✦</div>
+        <h2>LuxAI Pro</h2>
+        <p id="emptyText">Aşağıdan mesaj yaz veya hızlı işlemlerden birini seç.</p>
+      </div>
+    </section>
+
+    <section class="composer">
+      <button class="tool" id="attachBtn">📎</button>
+      <button class="tool" id="imageBtn">🖼️</button>
+      <button class="tool" id="micBtn">🎙️</button>
+      <textarea id="input" rows="1" placeholder="LuxAI'ye istediğini yaz..."></textarea>
+      <button class="send" id="sendBtn">➤</button>
+      <input id="fileInput" type="file" hidden />
+      <input id="photoInput" type="file" accept="image/*" hidden />
+    </section>
+
+    <nav class="bottom-nav">
+      <button class="active" data-mode="chat">⌂<small>Ana Sayfa</small></button>
+      <button data-mode="history">◴<small>Geçmiş</small></button>
+      <button class="center" data-mode="studio">✦</button>
+      <button data-mode="files">▣<small>Dosya</small></button>
+      <button data-mode="admin" class="admin-only">☻<small>Admin</small></button>
+    </nav>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

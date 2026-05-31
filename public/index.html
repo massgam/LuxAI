@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>LuxAI Pro</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="side-backdrop" id="sideBackdrop"></div>
+
+  <div class="voice-overlay" id="voiceOverlay">
+    <button class="close-voice" id="closeVoice">×</button>
+    <div class="voice-orb" id="voiceOrb">🎙️</div>
+    <h2 id="voiceTitle">Voice Mode</h2>
+    <p id="voiceText">Tap the microphone and speak</p>
+    <button class="voice-main" id="voiceMainBtn">Start</button>
+  </div>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">L</div>
+        <div><h1>LuxAI</h1><p>Premium AI Studio</p></div>
+      </div>
+
+      <button class="primary" id="newChat">＋ New Chat</button>
+
+      <div class="nav-title">Workspace</div>
+      <button class="nav active" data-mode="chat">💬 AI Chat</button>
+      <button class="nav" data-mode="studio">✨ AI Studio</button>
+      <button class="nav" data-mode="edit">🎨 Photo Edit</button>
+      <button class="nav" data-mode="files">📄 File Analysis</button>
+      <button class="nav" data-mode="voice">🎙️ Voice Mode</button>
+      <button class="nav" data-mode="history">📜 History</button>
+      <button class="nav admin-only" data-mode="admin">🛡️ Admin Panel</button>
+
+      <div class="profile">
+        <div class="avatar" id="avatar">L</div>
+        <div><strong id="userName">LuxAI User</strong><span id="userLang">Auto</span></div>
+      </div>
+    </aside>
+
+    <main class="main" id="mainArea">
+      <header class="top">
+        <button class="icon" id="menuBtn">☰</button>
+        <div class="top-title"><h2>LuxAI Pro</h2><p>Premium AI assistant inside Telegram</p></div>
+        <button class="pill" id="langBtn">🌐 Auto</button>
+      </header>
+
+      <section class="welcome-card">
+        <div><span id="welcome">Hoş geldin</span><strong id="welcomeName">LuxAI</strong></div>
+        <button id="openVoice" class="wave">👋</button>
+      </section>
+
+      <section class="studio-panel" id="studioPanel">
+        <button data-prompt="Create a luxury gold LuxAI logo">✨ Luxury Logo</button>
+        <button data-prompt="Create a professional gaming logo">🎮 Gaming Logo</button>
+        <button data-prompt="Create a premium app icon">📱 App Icon</button>
+        <button data-prompt="Create a cinematic Dubai background">🏙️ Dubai Visual</button>
+      </section>
+
+      <section class="messages" id="messages">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-logo">L</div>
+          <h3>LuxAI Pro</h3>
+          <p id="emptyText">Başlamak için aşağıya mesaj yaz veya mikrofona bas.</p>
+        </div>
+      </section>
+
+      <section class="composer">
+        <button class="tool" id="attachBtn">📎</button>
+        <button class="tool" id="imageBtn">🖼️</button>
+        <button class="tool" id="micBtn">🎙️</button>
+        <textarea id="input" rows="1" placeholder="LuxAI'ye istediğini yaz..."></textarea>
+        <button class="send" id="sendBtn">➤</button>
+        <input id="fileInput" type="file" hidden />
+        <input id="photoInput" type="file" accept="image/*" hidden />
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

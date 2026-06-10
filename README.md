@@ -1,18 +1,13 @@
-# LuxAI Professional Admin Update
+# LuxAI Photo Edit Fix
 
-## Dosyalar
-- `index.js` → GitHub ana dizindeki `index.js` ile değiştir.
-- `app.js` → `public/app.js` ile değiştir.
-- `styles-patch.css` → içeriğini `public/styles.css` dosyasının en altına ekle.
+Bu sürümde fotoğraf yüklendikten sonra kullanıcı:
+- bu fotoya benzer yap
+- aynı kişiyi koru
+- bu fotoğrafı düzenle
+- buna benzer görsel oluştur
+- arka planı değiştir
 
-## Eklenenler
-- Admin panelde ülke, dil, cihaz, son giriş, mesaj, görsel, fotoğraf, PDF/dosya, ses sayısı
-- Username ve Telegram ID
-- Opsiyonel telefon kaydetme alanı
-- `/api/save-phone`
-- `/api/config` üzerinden ülke/cihaz takibi
-- Mini App kullanım takibi
-- Bot tarafında Telegram chat yerine Mini App yönlendirme
+gibi yazarsa artık sıfırdan görsel üretme yerine `editImageFromPhoto()` çalışır.
 
-## Önemli
-Telefon numarası otomatik alınamaz. Kullanıcı profil sayfasından kendisi yazıp kaydederse admin panelde görünür.
+Dosya:
+- `index.js` → GitHub ana dizindeki index.js ile değiştir.

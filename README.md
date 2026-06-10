@@ -1,27 +1,29 @@
-# LuxAI Pro Telegram Bot
+# LuxAI Pro Telegram Mini App
 
-Railway Variables:
+Bu paket Telegram Mini App için hazırlanmış profesyonel ön yüz tasarımıdır.
 
-- TELEGRAM_BOT_TOKEN
-- OPENAI_API_KEY
-- ADMIN_TELEGRAM_ID
-- BOT_NAME=LuxAI
-- OPENAI_MODEL=gpt-4.1-mini
-- OPENAI_VISION_MODEL=gpt-4.1-mini
-- OPENAI_IMAGE_MODEL=gpt-image-1
+## Dosyalar
+- `index.html`
+- `styles.css`
+- `app.js`
 
-Start command:
+## Railway / Vercel / Netlify
+Bu dosyaları `public` klasörüne koyup static olarak yayınlayabilirsin.
 
-```bash
-npm start
-```
+## Telegram BotFather
+BotFather > /mybots > Bot seç > Bot Settings > Menu Button > Configure menu button  
+Buraya Mini App URL'ini gir.
 
-Özellikler:
-- Komutsuz yazılı sohbet
-- Komutsuz görsel oluşturma
-- Son gönderilen fotoğrafı doğal dille düzenleme
-- Sesli mesaj transkripsiyonu
-- Video note transkripsiyonu
-- Fotoğraf analizi
-- PDF/TXT/CSV/JSON okuma
-- /admin, /logs, /photos
+## Özellikler
+- Ana sayfa
+- Chat ekranı
+- AI Studio
+- Voice AI
+- Documents/PDF ekranı
+- Profil sayfası
+- Dil seçimi
+- Premium popup
+- Hızlı komutlar
+- Telegram WebApp SDK desteği
+
+Backend bağlantısı için `app.js` içindeki `sendMessage()` fonksiyonunu kendi API endpointine bağlaman gerekiyor.

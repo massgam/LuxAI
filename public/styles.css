@@ -600,3 +600,29 @@ button, input, textarea { font-family: inherit; }
   .card { padding: 13px; min-height: 108px; }
   .hero h1 { font-size: 20px; }
 }
+.admin-search{
+  width:100%;
+  border:1px solid var(--border);
+  background:rgba(14,22,38,.78);
+  color:#fff;
+  border-radius:16px;
+  padding:14px 15px;
+  outline:0;
+  margin:8px 0 16px;
+}
+.actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.small{
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  border-radius:12px;
+  padding:7px 10px;
+  font-size:12px;
+}
+.voice-orb.recording{
+  box-shadow:0 0 80px rgba(255,77,109,.5);
+}

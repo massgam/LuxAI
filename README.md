@@ -1,29 +1,18 @@
-# LuxAI Pro Telegram Mini App
-
-Bu paket Telegram Mini App için hazırlanmış profesyonel ön yüz tasarımıdır.
+# LuxAI Professional Admin Update
 
 ## Dosyalar
-- `index.html`
-- `styles.css`
-- `app.js`
+- `index.js` → GitHub ana dizindeki `index.js` ile değiştir.
+- `app.js` → `public/app.js` ile değiştir.
+- `styles-patch.css` → içeriğini `public/styles.css` dosyasının en altına ekle.
 
-## Railway / Vercel / Netlify
-Bu dosyaları `public` klasörüne koyup static olarak yayınlayabilirsin.
+## Eklenenler
+- Admin panelde ülke, dil, cihaz, son giriş, mesaj, görsel, fotoğraf, PDF/dosya, ses sayısı
+- Username ve Telegram ID
+- Opsiyonel telefon kaydetme alanı
+- `/api/save-phone`
+- `/api/config` üzerinden ülke/cihaz takibi
+- Mini App kullanım takibi
+- Bot tarafında Telegram chat yerine Mini App yönlendirme
 
-## Telegram BotFather
-BotFather > /mybots > Bot seç > Bot Settings > Menu Button > Configure menu button  
-Buraya Mini App URL'ini gir.
-
-## Özellikler
-- Ana sayfa
-- Chat ekranı
-- AI Studio
-- Voice AI
-- Documents/PDF ekranı
-- Profil sayfası
-- Dil seçimi
-- Premium popup
-- Hızlı komutlar
-- Telegram WebApp SDK desteği
-
-Backend bağlantısı için `app.js` içindeki `sendMessage()` fonksiyonunu kendi API endpointine bağlaman gerekiyor.
+## Önemli
+Telefon numarası otomatik alınamaz. Kullanıcı profil sayfasından kendisi yazıp kaydederse admin panelde görünür.

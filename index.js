@@ -95,6 +95,32 @@ async function initDb() {
       lang TEXT
     );
   `);
+
+  await pool.query(`
+    ALTER TABLE luxai_users
+    ADD COLUMN IF NOT EXISTS phone_number TEXT,
+    ADD COLUMN IF NOT EXISTS country TEXT,
+    ADD COLUMN IF NOT EXISTS device TEXT,
+    ADD COLUMN IF NOT EXISTS webapp_last_seen TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS text_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS image_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS photo_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS file_count INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS voice_count INTEGER DEFAULT 0;
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS luxai_usage_events (
+      id BIGSERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      user_id TEXT,
+      username TEXT,
+      country TEXT,
+      language_code TEXT,
+      device TEXT,
+      event_type TEXT
+    );
+  `);
 }
 
 initDb().catch(err => console.error('DB init error', err.message));
@@ -117,6 +143,107 @@ async function dbSaveUser(msg) {
     [id, from.username || '', from.first_name || '', from.last_name || '', from.language_code || '']
   );
 }
+
+
+async function dbSaveUserProfile({ user = {}, country = '', device = '', phoneNumber = '' }) {
+  if (!pool) return;
+
+  const id = String(user.id || '');
+  if (!id) return;
+
+  await pool.query(
+    `INSERT INTO luxai_users (id, username, first_name, last_name, language_code, phone_number, country, device, webapp_last_seen)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+     ON CONFLICT (id) DO UPDATE SET
+       username=EXCLUDED.username,
+       first_name=EXCLUDED.first_name,
+       last_name=EXCLUDED.last_name,
+       language_code=COALESCE(NULLIF(EXCLUDED.language_code,''), luxai_users.language_code),
+       phone_number=COALESCE(NULLIF(EXCLUDED.phone_number,''), luxai_users.phone_number),
+       country=COALESCE(NULLIF(EXCLUDED.country,''), luxai_users.country),
+       device=COALESCE(NULLIF(EXCLUDED.device,''), luxai_users.device),
+       webapp_last_seen=NOW(),
+       last_seen=NOW()`,
+    [
+      id,
+      user.username || '',
+      user.first_name || '',
+      user.last_name || '',
+      user.language_code || '',
+      phoneNumber || '',
+      country || '',
+      device || ''
+    ]
+  );
+}
+
+async function dbTrackUsage({ user = {}, eventType = '', country = '', device = '', lang = '' }) {
+  if (!pool) return;
+
+  const userId = String(user.id || '');
+  const username = user.username ? '@' + user.username : [user.first_name, user.last_name].filter(Boolean).join(' ');
+
+  await pool.query(
+    `INSERT INTO luxai_usage_events (user_id, username, country, language_code, device, event_type)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [userId, username || '', country || '', lang || user.language_code || '', device || '', eventType || 'unknown']
+  );
+
+  const columnMap = {
+    text: 'text_count',
+    chat: 'text_count',
+    image: 'image_count',
+    image_generate: 'image_count',
+    photo: 'photo_count',
+    photo_upload: 'photo_count',
+    file: 'file_count',
+    pdf: 'file_count',
+    voice: 'voice_count'
+  };
+
+  const column = columnMap[eventType] || '';
+
+  if (userId && column) {
+    await pool.query(
+      `UPDATE luxai_users SET ${column} = COALESCE(${column},0) + 1, last_seen = NOW() WHERE id = $1`,
+      [userId]
+    );
+  }
+}
+
+function getCountryFromRequest(req) {
+  return String(
+    req.headers['cf-ipcountry'] ||
+    req.headers['x-vercel-ip-country'] ||
+    req.headers['x-country-code'] ||
+    req.headers['cloudfront-viewer-country'] ||
+    ''
+  ).toUpperCase();
+}
+
+function getDeviceFromRequest(req) {
+  const ua = String(req.headers['user-agent'] || '').toLowerCase();
+
+  if (ua.includes('iphone')) return 'iPhone';
+  if (ua.includes('ipad')) return 'iPad';
+  if (ua.includes('android')) return 'Android';
+  if (ua.includes('macintosh') || ua.includes('mac os')) return 'Mac';
+  if (ua.includes('windows')) return 'Windows';
+  if (ua.includes('linux')) return 'Linux';
+
+  return 'Unknown';
+}
+
+function compactUserForDb(user = {}) {
+  return {
+    id: user.id || '',
+    username: user.username || '',
+    first_name: user.first_name || '',
+    last_name: user.last_name || '',
+    language_code: user.language_code || ''
+  };
+}
+
 
 async function dbSaveAction(item) {
   if (!pool) return;
@@ -178,54 +305,15 @@ function isWebSearchRequest(text = '') {
   ].some(k => t.includes(k));
 }
 
-function startKeyboard(msg = null, sampleText = '') {
-  const code = typeof msg === 'string'
-    ? msg
-    : getLanguageCode(msg || {}, sampleText || '');
-
-  const labels = {
-    tr: {
-      open: '🚀 LuxAI Aç',
-      image: '🎨 Görsel Oluştur',
-      voice: '🎙️ Sesli Asistan',
-      files: '📄 Dosya / Foto Analizi'
-    },
-    en: {
-      open: '🚀 Open LuxAI',
-      image: '🎨 Create Image',
-      voice: '🎙️ Voice Assistant',
-      files: '📄 File / Photo Analysis'
-    },
-    ru: {
-      open: '🚀 Открыть LuxAI',
-      image: '🎨 Создать изображение',
-      voice: '🎙️ Голосовой ассистент',
-      files: '📄 Анализ файла / фото'
-    },
-    uk: {
-      open: '🚀 Відкрити LuxAI',
-      image: '🎨 Створити зображення',
-      voice: '🎙️ Голосовий асистент',
-      files: '📄 Аналіз файлу / фото'
-    },
-    az: {
-      open: '🚀 LuxAI aç',
-      image: '🎨 Şəkil yarat',
-      voice: '🎙️ Səsli asistent',
-      files: '📄 Fayl / Foto analizi'
-    }
-  };
-
-  const l = labels[code] || labels.en;
-
+function startKeyboard() {
   return {
     inline_keyboard: [
-      [{ text: l.open, web_app: { url: WEBAPP_URL } }],
+      [{ text: '🚀 LuxAI Aç', web_app: { url: WEBAPP_URL } }],
       [
-        { text: l.image, web_app: { url: `${WEBAPP_URL}?mode=studio` } },
-        { text: l.voice, web_app: { url: `${WEBAPP_URL}?mode=voice` } }
+        { text: '🎨 Görsel Oluştur', web_app: { url: `${WEBAPP_URL}?mode=studio` } },
+        { text: '🎙️ Sesli Asistan', web_app: { url: `${WEBAPP_URL}?mode=voice` } }
       ],
-      [{ text: l.files, web_app: { url: `${WEBAPP_URL}?mode=files` } }]
+      [{ text: '📄 Dosya / Foto Analizi', web_app: { url: `${WEBAPP_URL}?mode=files` } }]
     ]
   };
 }
@@ -303,9 +391,9 @@ function languageInstruction(msg, text = '') {
   return 'Kullanıcının yazdığı veya konuştuğu dili otomatik algıla ve aynı dilde cevap ver.';
 }
 
-function startMessage(msg, sampleText = '') {
+function startMessage(msg) {
   const name = userName(msg.from);
-  const code = getLanguageCode(msg, sampleText);
+  const code = getLanguageCode(msg, '');
 
   if (code === 'ru') {
     return `👋 Добро пожаловать ${name}
@@ -720,7 +808,7 @@ async function handleUserText(msg, text) {
 
 bot.onText(/\/start/, async (msg) => {
   logAction(msg, 'start', '/start');
-  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || ''), { reply_markup: startKeyboard(msg, msg.text || '') });
+  await bot.sendMessage(msg.chat.id, startMessage(msg), { reply_markup: startKeyboard() });
 });
 
 bot.onText(/\/clear/, async (msg) => {
@@ -786,63 +874,47 @@ bot.onText(/\/photos/, async (msg) => {
 bot.on('message', async (msg) => {
   if (!msg.text) return;
 
-  if (msg.text.startsWith('/start')) return;
-  if (msg.text.startsWith('/admin')) return;
-  if (msg.text.startsWith('/logs')) return;
-  if (msg.text.startsWith('/photos')) return;
-  if (msg.text.startsWith('/clear')) return;
+  const command = String(msg.text || '').trim().split(/\s+/)[0].toLowerCase();
 
-  logAction(msg, 'mini_app_redirect', msg.text);
+  if (['/start', '/admin', '/logs', '/photos', '/clear'].includes(command)) return;
 
-  await bot.sendMessage(
-    msg.chat.id,
-    startMessage(msg, msg.text || ''),
-    { reply_markup: startKeyboard(msg, msg.text || '') }
-  );
+  logAction(msg, 'mini_app_redirect_text', msg.text);
+
+  await bot.sendMessage(msg.chat.id, startMessage(msg), {
+    reply_markup: startKeyboard()
+  });
 });
 
 bot.on('photo', async (msg) => {
   stats.photos += 1;
   logAction(msg, 'mini_app_redirect_photo', msg.caption || 'photo');
-
-  await bot.sendMessage(
-    msg.chat.id,
-    startMessage(msg, msg.caption || ''),
-    { reply_markup: startKeyboard(msg, msg.caption || '') }
-  );
+  await bot.sendMessage(msg.chat.id, startMessage(msg), {
+    reply_markup: startKeyboard()
+  });
 });
 
 bot.on('voice', async (msg) => {
   stats.voice += 1;
   logAction(msg, 'mini_app_redirect_voice', 'voice');
-
-  await bot.sendMessage(
-    msg.chat.id,
-    startMessage(msg, ''),
-    { reply_markup: startKeyboard(msg, '') }
-  );
+  await bot.sendMessage(msg.chat.id, startMessage(msg), {
+    reply_markup: startKeyboard()
+  });
 });
 
 bot.on('video_note', async (msg) => {
   stats.videoNotes += 1;
   logAction(msg, 'mini_app_redirect_video_note', 'video_note');
-
-  await bot.sendMessage(
-    msg.chat.id,
-    startMessage(msg, ''),
-    { reply_markup: startKeyboard(msg, '') }
-  );
+  await bot.sendMessage(msg.chat.id, startMessage(msg), {
+    reply_markup: startKeyboard()
+  });
 });
 
 bot.on('document', async (msg) => {
   stats.files += 1;
   logAction(msg, 'mini_app_redirect_document', msg.document?.file_name || 'document');
-
-  await bot.sendMessage(
-    msg.chat.id,
-    startMessage(msg, msg.document?.file_name || ''),
-    { reply_markup: startKeyboard(msg, msg.document?.file_name || '') }
-  );
+  await bot.sendMessage(msg.chat.id, startMessage(msg), {
+    reply_markup: startKeyboard()
+  });
 });
 
 bot.on('polling_error', (err) => {
@@ -908,6 +980,12 @@ app.post('/api/upload-photo', async (req, res) => {
     savedPhotos.splice(30);
     dbSavePhoto(photoRecord, fakeMsg).catch(err => console.error('DB mini photo save error', err.message));
 
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+
+    await dbSaveUserProfile({ user: compactUserForDb(fakeMsg.from), country, device }).catch(err => console.error('DB mini photo profile save error', err.message));
+    await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'photo_upload', country, device, lang: user.language_code || '' }).catch(err => console.error('DB photo usage save error', err.message));
+
     stats.photos += 1;
     logAction(fakeMsg, 'mini_app_photo', caption || 'Mini App photo uploaded', {
       photoFileId: photoRecord.fileId
@@ -945,12 +1023,18 @@ app.post('/api/chat', async (req, res) => {
     const chatId = fakeMsg.chat.id;
     const langRule = languageInstruction(fakeMsg, message);
     const lastPhoto = lastPhotoByChat.get(String(chatId));
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+
+    await dbSaveUserProfile({ user: compactUserForDb(fakeMsg.from), country, device }).catch(err => console.error('DB mini profile save error', err.message));
+    await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'chat', country, device, lang }).catch(err => console.error('DB usage save error', err.message));
 
     logAction(fakeMsg, 'mini_app_chat', message);
 
     if (isImageGenerationRequest(message)) {
       const image = await generateImage(message);
       stats.imageGenerated += 1;
+      await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'image_generate', country, device, lang }).catch(err => console.error('DB image usage save error', err.message));
       logAction(fakeMsg, 'mini_app_image_generate', message);
 
       return res.json({
@@ -1036,6 +1120,12 @@ app.post('/api/upload-file', async (req, res) => {
       }
     };
 
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+
+    await dbSaveUserProfile({ user: compactUserForDb(fakeMsg.from), country, device }).catch(err => console.error('DB mini file profile save error', err.message));
+    await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'file', country, device, lang }).catch(err => console.error('DB file usage save error', err.message));
+
     let text = '';
     if (ext === '.pdf' || mime.includes('pdf')) {
       const data = await pdf(buffer);
@@ -1107,6 +1197,11 @@ app.post('/api/transcribe', async (req, res) => {
       }
     };
 
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+    await dbSaveUserProfile({ user: compactUserForDb(fakeMsg.from), country, device }).catch(err => console.error('DB mini voice profile save error', err.message));
+    await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'voice', country, device, lang: user.language_code || '' }).catch(err => console.error('DB voice usage save error', err.message));
+
     logAction(fakeMsg, 'mini_app_voice_transcript', transcript);
     res.json({ ok: true, transcript });
   } catch (err) {
@@ -1139,6 +1234,33 @@ app.post('/api/tts', async (req, res) => {
 });
 
 
+
+app.post('/api/save-phone', async (req, res) => {
+  try {
+    const user = req.body?.user || {};
+    const phoneNumber = String(req.body?.phoneNumber || '').trim();
+
+    if (!phoneNumber) {
+      return res.status(400).json({ ok: false, error: 'phoneNumber is required' });
+    }
+
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+
+    await dbSaveUserProfile({
+      user: compactUserForDb(user),
+      country,
+      device,
+      phoneNumber
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('save-phone error', err);
+    res.status(500).json({ ok: false, error: err.message || 'Phone save failed' });
+  }
+});
+
 app.post('/api/config', async (req, res) => {
   try {
     const user = req.body?.user || {};
@@ -1146,8 +1268,14 @@ app.post('/api/config', async (req, res) => {
     const username = String(user.username || '').replace('@', '').toLowerCase();
     const adminUsername = String(process.env.ADMIN_TELEGRAM_USERNAME || '').replace('@', '').toLowerCase();
 
-    const country =
-      String(req.headers['cf-ipcountry'] || req.headers['x-vercel-ip-country'] || req.headers['x-country-code'] || '').toUpperCase();
+    const country = getCountryFromRequest(req);
+    const device = getDeviceFromRequest(req);
+
+    await dbSaveUserProfile({
+      user: compactUserForDb(user),
+      country,
+      device
+    }).catch(err => console.error('DB profile save error', err.message));
 
     const isAdmin =
       Boolean(ADMIN_TELEGRAM_ID && userId === String(ADMIN_TELEGRAM_ID)) ||
@@ -1157,7 +1285,8 @@ app.post('/api/config', async (req, res) => {
       ok: true,
       isAdmin,
       bot: BOT_NAME,
-      country
+      country,
+      device
     });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message || 'Config failed' });
@@ -1239,11 +1368,73 @@ app.get('/admin-data', async (req, res) => {
       image: p.base64 ? `data:${p.mime || 'image/jpeg'};base64,${p.base64}` : ''
     }));
 
+    const mergedUsersMap = new Map();
+
+    for (const u of dbUsers) {
+      const id = String(u.id || '');
+      if (!id) continue;
+      mergedUsersMap.set(id, {
+        id,
+        username: u.username || '',
+        first_name: u.first_name || '',
+        last_name: u.last_name || '',
+        language_code: u.language_code || '',
+        phone_number: u.phone_number || '',
+        country: u.country || '',
+        device: u.device || '',
+        first_seen: u.first_seen || '',
+        last_seen: u.last_seen || '',
+        webapp_last_seen: u.webapp_last_seen || '',
+        messages: Number(u.messages || 0),
+        text_count: Number(u.text_count || 0),
+        image_count: Number(u.image_count || 0),
+        photo_count: Number(u.photo_count || 0),
+        file_count: Number(u.file_count || 0),
+        voice_count: Number(u.voice_count || 0)
+      });
+    }
+
+    for (const u of memoryUsers) {
+      const id = String(u.id || '');
+      if (!id) continue;
+      if (!mergedUsersMap.has(id)) {
+        mergedUsersMap.set(id, {
+          ...u,
+          phone_number: '',
+          country: '',
+          device: '',
+          text_count: 0,
+          image_count: 0,
+          photo_count: 0,
+          file_count: 0,
+          voice_count: 0
+        });
+      }
+    }
+
+    const mergedUsers = Array.from(mergedUsersMap.values());
+
+    const countryStats = {};
+    const languageStats = {};
+    const deviceStats = {};
+
+    mergedUsers.forEach(u => {
+      const country = u.country || 'Unknown';
+      const lang = u.language_code || 'Unknown';
+      const device = u.device || 'Unknown';
+      countryStats[country] = (countryStats[country] || 0) + 1;
+      languageStats[lang] = (languageStats[lang] || 0) + 1;
+      deviceStats[device] = (deviceStats[device] || 0) + 1;
+    });
+
     res.json({
       ok: true,
       stats: {
         ...stats,
-        users: memoryUsers
+        users: mergedUsers,
+        countryStats,
+        languageStats,
+        deviceStats
       },
       db: {
         enabled: Boolean(pool),
@@ -1252,6 +1443,7 @@ app.get('/admin-data', async (req, res) => {
         photos: dbPhotos,
         messages: dbMessages
       },
+      users: mergedUsers,
       lastActions: [...dbMessages, ...dbActions, ...memoryActions],
       photos: [...memoryPhotos, ...dbPhotos]
     });

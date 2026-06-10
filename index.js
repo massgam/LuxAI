@@ -305,15 +305,44 @@ function isWebSearchRequest(text = '') {
   ].some(k => t.includes(k));
 }
 
-function startKeyboard() {
+function startKeyboard(lang = 'tr') {
+  const labels = {
+    tr: {
+      open: '🚀 LuxAI Aç',
+      image: '🎨 Görsel Oluştur',
+      voice: '🎙️ Sesli Asistan',
+      files: '📄 Dosya / Foto Analizi'
+    },
+    en: {
+      open: '🚀 Open LuxAI',
+      image: '🎨 Create Image',
+      voice: '🎙️ Voice Assistant',
+      files: '📄 File / Photo Analysis'
+    },
+    ru: {
+      open: '🚀 Открыть LuxAI',
+      image: '🎨 Создать изображение',
+      voice: '🎙️ Голосовой ассистент',
+      files: '📄 Анализ файла / фото'
+    },
+    uk: {
+      open: '🚀 Відкрити LuxAI',
+      image: '🎨 Створити зображення',
+      voice: '🎙️ Голосовий асистент',
+      files: '📄 Аналіз файлу / фото'
+    }
+  };
+
+  const l = labels[lang] || labels.tr;
+
   return {
     inline_keyboard: [
-      [{ text: '🚀 LuxAI Aç', web_app: { url: WEBAPP_URL } }],
+      [{ text: l.open, web_app: { url: WEBAPP_URL } }],
       [
-        { text: '🎨 Görsel Oluştur', web_app: { url: `${WEBAPP_URL}?mode=studio` } },
-        { text: '🎙️ Sesli Asistan', web_app: { url: `${WEBAPP_URL}?mode=voice` } }
+        { text: l.image, web_app: { url: `${WEBAPP_URL}?mode=studio` } },
+        { text: l.voice, web_app: { url: `${WEBAPP_URL}?mode=voice` } }
       ],
-      [{ text: '📄 Dosya / Foto Analizi', web_app: { url: `${WEBAPP_URL}?mode=files` } }]
+      [{ text: l.files, web_app: { url: `${WEBAPP_URL}?mode=files` } }]
     ]
   };
 }
@@ -391,9 +420,9 @@ function languageInstruction(msg, text = '') {
   return 'Kullanıcının yazdığı veya konuştuğu dili otomatik algıla ve aynı dilde cevap ver.';
 }
 
-function startMessage(msg) {
+function startMessage(msg, text = '') {
   const name = userName(msg.from);
-  const code = getLanguageCode(msg, '');
+  const code = getLanguageCode(msg, text);
 
   if (code === 'ru') {
     return `👋 Добро пожаловать ${name}
@@ -732,11 +761,49 @@ function isImageEditRequest(text = '') {
     'измени', 'отредактируй', 'сделай', 'добавь', 'убери', 'удали', 'замени',
     'фон', 'цвет', 'лицо', 'небо', 'одежду', 'спереди',
     'зміни', 'відредагуй', 'зроби', 'додай', 'прибери', 'видали', 'заміни',
-    'фон', 'колір', 'обличчя', 'небо', 'одяг', 'спереду'
+    'фон', 'колір', 'обличчя', 'небо', 'одяг', 'спереду',
+    'bu foto', 'bu resim', 'bu görsel', 'buna benzer', 'fotoya benzer', 'aynı kişi',
+    'this photo', 'this image', 'similar to this', 'same person',
+    'это фото', 'это изображение', 'тот же человек',
+    'це фото', 'це зображення', 'та сама людина'
   ];
 
   return editWords.some(k => t.includes(k));
 }
+
+
+function isPhotoBasedTransformRequest(text = '') {
+  const t = String(text || '').toLowerCase().trim();
+
+  const photoRefs = [
+    'bu foto', 'bu resim', 'bu görsel', 'buna benzer', 'foto ya benzer', 'fotoya benzer',
+    'aynı kişi', 'kişiyi koru', 'yüzü koru', 'arkadaşım', 'beni', 'onu',
+    'this photo', 'this image', 'similar to this', 'same person', 'keep the person', 'keep face',
+    'это фото', 'это изображение', 'похоже на это', 'тот же человек', 'сохрани человека', 'сохрани лицо',
+    'це фото', 'це зображення', 'схоже на це', 'та сама людина', 'збережи людину', 'збережи обличчя'
+  ];
+
+  const transformWords = [
+    'oluştur', 'yap', 'düzenle', 'değiştir', 'benzer', 'aynı', 'arka plan', 'background',
+    'create', 'make', 'edit', 'change', 'similar', 'same',
+    'создай', 'сделай', 'измени', 'отредактируй', 'похож',
+    'створи', 'зроби', 'зміни', 'відредагуй', 'схож'
+  ];
+
+  return photoRefs.some(w => t.includes(w)) || (
+    transformWords.some(w => t.includes(w)) &&
+    ['foto', 'photo', 'image', 'resim', 'görsel', 'фото', 'зображення'].some(w => t.includes(w))
+  );
+}
+
+function buildPhotoEditPrompt(userPrompt = '') {
+  const p = String(userPrompt || '').trim();
+
+  return `${p}
+
+Use the uploaded image as the base image. Preserve the real person from the uploaded photo as much as possible: face identity, facial features, pose and body should stay consistent. Apply only the requested visual changes such as background, lighting, style, clothes, environment or composition. Create a polished professional edit, not a new unrelated person.`;
+}
+
 
 function isImageAnalyzeRequest(text = '') {
   const t = text.toLowerCase();
@@ -758,6 +825,18 @@ async function handleUserText(msg, text) {
 
   try {
     await bot.sendChatAction(chatId, 'typing');
+
+    if (lastPhoto && (isPhotoBasedTransformRequest(text) || isImageEditRequest(text))) {
+      await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🎨 Редактирую фото...' : getLanguageCode(msg, text) === 'uk' ? '🎨 Редагую фото...' : '🎨 Fotoğrafını düzenliyorum...');
+      await bot.sendChatAction(chatId, 'upload_photo');
+
+      const edited = await editImageFromPhoto(lastPhoto, buildPhotoEditPrompt(text));
+      stats.imageEdited += 1;
+      logAction(msg, 'image_edit', text, { photoFileId: lastPhoto.fileId });
+
+      await bot.sendPhoto(chatId, edited, { caption: getLanguageCode(msg, text) === 'ru' ? '✅ Фото отредактировано.' : getLanguageCode(msg, text) === 'uk' ? '✅ Фото відредаговано.' : '✅ Fotoğraf düzenlendi.' });
+      return;
+    }
 
     if (isImageGenerationRequest(text)) {
       await bot.sendMessage(chatId, getLanguageCode(msg, text) === 'ru' ? '🖼️ Создаю изображение...' : getLanguageCode(msg, text) === 'uk' ? '🖼️ Створюю зображення...' : '🖼️ Görsel oluşturuyorum...');
@@ -808,7 +887,7 @@ async function handleUserText(msg, text) {
 
 bot.onText(/\/start/, async (msg) => {
   logAction(msg, 'start', '/start');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), { reply_markup: startKeyboard() });
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || ''), { reply_markup: startKeyboard(getLanguageCode(msg, msg.text || '')) });
 });
 
 bot.onText(/\/clear/, async (msg) => {
@@ -880,40 +959,40 @@ bot.on('message', async (msg) => {
 
   logAction(msg, 'mini_app_redirect_text', msg.text);
 
-  await bot.sendMessage(msg.chat.id, startMessage(msg), {
-    reply_markup: startKeyboard()
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || msg.caption || ''), {
+    reply_markup: startKeyboard(getLanguageCode(msg, msg.text || msg.caption || ''))
   });
 });
 
 bot.on('photo', async (msg) => {
   stats.photos += 1;
   logAction(msg, 'mini_app_redirect_photo', msg.caption || 'photo');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), {
-    reply_markup: startKeyboard()
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || msg.caption || ''), {
+    reply_markup: startKeyboard(getLanguageCode(msg, msg.text || msg.caption || ''))
   });
 });
 
 bot.on('voice', async (msg) => {
   stats.voice += 1;
   logAction(msg, 'mini_app_redirect_voice', 'voice');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), {
-    reply_markup: startKeyboard()
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || msg.caption || ''), {
+    reply_markup: startKeyboard(getLanguageCode(msg, msg.text || msg.caption || ''))
   });
 });
 
 bot.on('video_note', async (msg) => {
   stats.videoNotes += 1;
   logAction(msg, 'mini_app_redirect_video_note', 'video_note');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), {
-    reply_markup: startKeyboard()
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || msg.caption || ''), {
+    reply_markup: startKeyboard(getLanguageCode(msg, msg.text || msg.caption || ''))
   });
 });
 
 bot.on('document', async (msg) => {
   stats.files += 1;
   logAction(msg, 'mini_app_redirect_document', msg.document?.file_name || 'document');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), {
-    reply_markup: startKeyboard()
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || msg.caption || ''), {
+    reply_markup: startKeyboard(getLanguageCode(msg, msg.text || msg.caption || ''))
   });
 });
 
@@ -1031,6 +1110,24 @@ app.post('/api/chat', async (req, res) => {
 
     logAction(fakeMsg, 'mini_app_chat', message);
 
+    if (lastPhoto && (isPhotoBasedTransformRequest(message) || isImageEditRequest(message))) {
+      const edited = await editImageFromPhoto(lastPhoto, buildPhotoEditPrompt(message));
+      stats.imageEdited += 1;
+      await dbTrackUsage({ user: compactUserForDb(fakeMsg.from), eventType: 'image_generate', country, device, lang }).catch(err => console.error('DB image edit usage save error', err.message));
+      logAction(fakeMsg, 'mini_app_image_edit', message, { photoFileId: lastPhoto.fileId });
+
+      return res.json({
+        ok: true,
+        type: 'image',
+        reply: getLanguageCode(fakeMsg, message) === 'ru'
+          ? '✅ Фото отредактировано.'
+          : getLanguageCode(fakeMsg, message) === 'uk'
+          ? '✅ Фото відредаговано.'
+          : '✅ Fotoğraf düzenlendi.',
+        image: bufferToPublicImage(edited)
+      });
+    }
+
     if (isImageGenerationRequest(message)) {
       const image = await generateImage(message);
       stats.imageGenerated += 1;
@@ -1085,9 +1182,14 @@ app.post('/api/chat', async (req, res) => {
   } catch (err) {
     stats.errors += 1;
     console.error('mini app /api/chat error', err);
+    const raw = String(err.message || '');
+    const safeMsg = raw.includes('safety') || raw.includes('rejected')
+      ? 'Bu görsel isteği sistem tarafından reddedildi. Fotoğraf düzenleme için daha net yaz: “Bu fotoğrafın arka planını değiştir, kişiyi koru” gibi.'
+      : raw || 'Mini App chat failed';
+
     res.status(500).json({
       ok: false,
-      error: err.message || 'Mini App chat failed'
+      error: safeMsg
     });
   }
 });

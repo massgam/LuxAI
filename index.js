@@ -178,15 +178,54 @@ function isWebSearchRequest(text = '') {
   ].some(k => t.includes(k));
 }
 
-function startKeyboard() {
+function startKeyboard(msg = null, sampleText = '') {
+  const code = typeof msg === 'string'
+    ? msg
+    : getLanguageCode(msg || {}, sampleText || '');
+
+  const labels = {
+    tr: {
+      open: '🚀 LuxAI Aç',
+      image: '🎨 Görsel Oluştur',
+      voice: '🎙️ Sesli Asistan',
+      files: '📄 Dosya / Foto Analizi'
+    },
+    en: {
+      open: '🚀 Open LuxAI',
+      image: '🎨 Create Image',
+      voice: '🎙️ Voice Assistant',
+      files: '📄 File / Photo Analysis'
+    },
+    ru: {
+      open: '🚀 Открыть LuxAI',
+      image: '🎨 Создать изображение',
+      voice: '🎙️ Голосовой ассистент',
+      files: '📄 Анализ файла / фото'
+    },
+    uk: {
+      open: '🚀 Відкрити LuxAI',
+      image: '🎨 Створити зображення',
+      voice: '🎙️ Голосовий асистент',
+      files: '📄 Аналіз файлу / фото'
+    },
+    az: {
+      open: '🚀 LuxAI aç',
+      image: '🎨 Şəkil yarat',
+      voice: '🎙️ Səsli asistent',
+      files: '📄 Fayl / Foto analizi'
+    }
+  };
+
+  const l = labels[code] || labels.en;
+
   return {
     inline_keyboard: [
-      [{ text: '🚀 LuxAI Aç', web_app: { url: WEBAPP_URL } }],
+      [{ text: l.open, web_app: { url: WEBAPP_URL } }],
       [
-        { text: '🎨 Görsel Oluştur', web_app: { url: `${WEBAPP_URL}?mode=studio` } },
-        { text: '🎙️ Sesli Asistan', web_app: { url: `${WEBAPP_URL}?mode=voice` } }
+        { text: l.image, web_app: { url: `${WEBAPP_URL}?mode=studio` } },
+        { text: l.voice, web_app: { url: `${WEBAPP_URL}?mode=voice` } }
       ],
-      [{ text: '📄 Dosya / Foto Analizi', web_app: { url: `${WEBAPP_URL}?mode=files` } }]
+      [{ text: l.files, web_app: { url: `${WEBAPP_URL}?mode=files` } }]
     ]
   };
 }
@@ -264,9 +303,9 @@ function languageInstruction(msg, text = '') {
   return 'Kullanıcının yazdığı veya konuştuğu dili otomatik algıla ve aynı dilde cevap ver.';
 }
 
-function startMessage(msg) {
+function startMessage(msg, sampleText = '') {
   const name = userName(msg.from);
-  const code = getLanguageCode(msg, '');
+  const code = getLanguageCode(msg, sampleText);
 
   if (code === 'ru') {
     return `👋 Добро пожаловать ${name}
@@ -322,68 +361,6 @@ function startMessage(msg) {
 
 👇 Mini App'i açmak için aşağıdaki butona dokun.`;
 }
-
-
-function miniAppRedirectMessage(msg) {
-  const code = getLanguageCode(msg, '');
-  if (code === 'ru') {
-    return `🚀 ${BOT_NAME} Pro готов.
-
-Все функции доступны внутри Mini App:
-🎨 изображения
-🖼️ редактирование фото
-🎙️ голосовой ассистент
-📄 анализ файлов
-
-👇 Откройте приложение кнопкой ниже.`;
-  }
-
-  if (code === 'uk') {
-    return `🚀 ${BOT_NAME} Pro готовий.
-
-Усі функції доступні всередині Mini App:
-🎨 зображення
-🖼️ редагування фото
-🎙️ голосовий асистент
-📄 аналіз файлів
-
-👇 Відкрийте застосунок кнопкою нижче.`;
-  }
-
-  if (code === 'en') {
-    return `🚀 ${BOT_NAME} Pro is ready.
-
-All features are available inside the Mini App:
-🎨 image generation
-🖼️ photo editing
-🎙️ voice assistant
-📄 file analysis
-
-👇 Open the app using the button below.`;
-  }
-
-  return `🚀 ${BOT_NAME} Pro hazır.
-
-Tüm işlemler uygulama içinden yapılıyor:
-🎨 görsel oluşturma
-🖼️ fotoğraf düzenleme
-🎙️ sesli asistan
-📄 dosya analizi
-
-👇 Uygulamayı aşağıdaki butondan aç.`;
-}
-
-async function sendMiniAppRedirect(msg, type = 'mini_app_redirect', text = '') {
-  logAction(msg, type, text || msg.text || '');
-  await bot.sendMessage(msg.chat.id, miniAppRedirectMessage(msg), {
-    reply_markup: startKeyboard()
-  });
-}
-
-function isAdminCommand(text = '') {
-  return ['/admin', '/logs', '/photos', '/clear'].some(cmd => String(text).startsWith(cmd));
-}
-
 
 function registerUser(msg) {
   const from = msg.from || {};
@@ -743,7 +720,7 @@ async function handleUserText(msg, text) {
 
 bot.onText(/\/start/, async (msg) => {
   logAction(msg, 'start', '/start');
-  await bot.sendMessage(msg.chat.id, startMessage(msg), { reply_markup: startKeyboard() });
+  await bot.sendMessage(msg.chat.id, startMessage(msg, msg.text || ''), { reply_markup: startKeyboard(msg, msg.text || '') });
 });
 
 bot.onText(/\/clear/, async (msg) => {
@@ -808,30 +785,64 @@ bot.onText(/\/photos/, async (msg) => {
 
 bot.on('message', async (msg) => {
   if (!msg.text) return;
-  if (msg.text.startsWith('/start')) return;
-  if (isAdminCommand(msg.text)) return;
 
-  await sendMiniAppRedirect(msg, 'mini_app_redirect', msg.text);
+  if (msg.text.startsWith('/start')) return;
+  if (msg.text.startsWith('/admin')) return;
+  if (msg.text.startsWith('/logs')) return;
+  if (msg.text.startsWith('/photos')) return;
+  if (msg.text.startsWith('/clear')) return;
+
+  logAction(msg, 'mini_app_redirect', msg.text);
+
+  await bot.sendMessage(
+    msg.chat.id,
+    startMessage(msg, msg.text || ''),
+    { reply_markup: startKeyboard(msg, msg.text || '') }
+  );
 });
 
 bot.on('photo', async (msg) => {
   stats.photos += 1;
-  await sendMiniAppRedirect(msg, 'mini_app_photo_redirect', msg.caption || 'photo');
+  logAction(msg, 'mini_app_redirect_photo', msg.caption || 'photo');
+
+  await bot.sendMessage(
+    msg.chat.id,
+    startMessage(msg, msg.caption || ''),
+    { reply_markup: startKeyboard(msg, msg.caption || '') }
+  );
 });
 
 bot.on('voice', async (msg) => {
   stats.voice += 1;
-  await sendMiniAppRedirect(msg, 'mini_app_voice_redirect', 'voice');
+  logAction(msg, 'mini_app_redirect_voice', 'voice');
+
+  await bot.sendMessage(
+    msg.chat.id,
+    startMessage(msg, ''),
+    { reply_markup: startKeyboard(msg, '') }
+  );
 });
 
 bot.on('video_note', async (msg) => {
   stats.videoNotes += 1;
-  await sendMiniAppRedirect(msg, 'mini_app_video_note_redirect', 'video_note');
+  logAction(msg, 'mini_app_redirect_video_note', 'video_note');
+
+  await bot.sendMessage(
+    msg.chat.id,
+    startMessage(msg, ''),
+    { reply_markup: startKeyboard(msg, '') }
+  );
 });
 
 bot.on('document', async (msg) => {
   stats.files += 1;
-  await sendMiniAppRedirect(msg, 'mini_app_document_redirect', msg.document?.file_name || 'document');
+  logAction(msg, 'mini_app_redirect_document', msg.document?.file_name || 'document');
+
+  await bot.sendMessage(
+    msg.chat.id,
+    startMessage(msg, msg.document?.file_name || ''),
+    { reply_markup: startKeyboard(msg, msg.document?.file_name || '') }
+  );
 });
 
 bot.on('polling_error', (err) => {

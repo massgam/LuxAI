@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>LuxAI Pro Mini App</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <main id="app"></main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-page="home">
+        <span>⌂</span><small>Ana Sayfa</small>
+      </button>
+      <button class="nav-btn" data-page="chat">
+        <span>◌</span><small>Sohbetler</small>
+      </button>
+      <button class="nav-center" data-page="chat">+</button>
+      <button class="nav-btn" data-page="studio">
+        <span>✣</span><small>Studio</small>
+      </button>
+      <button class="nav-btn" data-page="profile">
+        <span>♙</span><small>Profil</small>
+      </button>
+    </nav>
+  </div>
+
+  <div id="modal-root"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

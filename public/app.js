@@ -10,14 +10,15 @@ const I18N = {
     home: "Ana Sayfa",
     chat: "Sohbet",
     studio: "AI Studio",
-    voice: "Voice AI",
-    docs: "Documents",
+    voice: "Sesli AI",
+    docs: "Belgeler",
     profile: "Profil",
     hello: "Merhaba",
     subtitle: "Bugün ne üretmek istersin?",
     startChat: "AI Sohbete Başla",
     recent: "Son Kullanılanlar",
-    tools: "Tools",
+    all: "Tümü ›",
+    tools: "Araçlar",
     input: "Mesaj yaz...",
     thinking: "Düşünüyorum...",
     err: "Bir hata oluştu.",
@@ -31,7 +32,62 @@ const I18N = {
     voiceHint: "Konuşmak için mikrofona dokunun",
     premium: "Premium Plan",
     language: "Dil Seçin",
-    quick: "Hızlı Komutlar"
+    quick: "Hızlı Komutlar",
+    today: "BUGÜN",
+    ready: "LuxAI hazır. Ne yapmak istersin?",
+    imageCreate: "Görsel Oluştur",
+    imageDesc: "Metinden görsel üret",
+    photoEdit: "Fotoğraf Düzenle",
+    photoDesc: "Fotoğraf yükle ve düzenle",
+    logo: "Logo Tasarla",
+    logoDesc: "Profesyonel logo oluştur",
+    avatar: "AI Avatar",
+    avatarDesc: "Kendine özel avatar üret",
+    bgRemove: "Arka Plan Kaldır",
+    bgRemoveDesc: "Fotoğraftan arka planı kaldır",
+    upscale: "HD Yükselt",
+    upscaleDesc: "Görselleri daha kaliteli yap",
+    banner: "Banner Oluştur",
+    bannerDesc: "Sosyal medya bannerı oluştur",
+    video: "Video Oluştur",
+    videoDesc: "Video fikri veya prompt hazırla",
+    promptTitle: "Prompt Yaz",
+    promptPlaceholder: "Ne oluşturmak istiyorsun?",
+    docsSubtitle: "PDF analiz ve özet",
+    docsHint: "PDF, TXT, DOCX yükleyebilirsin",
+    lastDocs: "Son Belgelerim",
+    messages: "Mesaj",
+    images: "Görsel",
+    lang: "Dil",
+    history: "Sohbet Geçmişi",
+    plan: "Abonelik Planım",
+    referral: "Referans Programı",
+    earn: "KAZAN",
+    settings: "Dil & Ayarlar",
+    clearHistory: "Geçmişi Temizle",
+    noHistory: "Henüz geçmiş yok",
+    admin: "Admin Panel",
+    adminSub: "Kullanıcı ve işlem takibi",
+    users: "Kullanıcılar",
+    detail: "Detay",
+    totalUsers: "Toplam Kullanıcı",
+    online: "Online",
+    adminMessages: "Mesajlar",
+    photos: "Fotoğraflar",
+    loading: "Yükleniyor",
+    upgrade: "Planı Yükselt",
+    unlimited: "Sınırsız mesaj",
+    imageGeneration: "Görsel oluşturma",
+    bigPdf: "PDF büyük dosya desteği",
+    priority: "Öncelikli yanıt",
+    noAds: "Reklamsız kullanım",
+    qLogo: "Bana logo tasarla",
+    qInvest: "Yatırım fikri ver",
+    qTranslate: "İngilizce çevir",
+    qEdit: "Bu resmi düzenle",
+    qSummary: "Özet çıkar",
+    micRequired: "Mikrofon izni gerekli.",
+    countryAuto: "Dil otomatik seçildi"
   },
   en: {
     home: "Home",
@@ -44,6 +100,7 @@ const I18N = {
     subtitle: "What would you like to create today?",
     startChat: "Start AI Chat",
     recent: "Recent",
+    all: "All ›",
     tools: "Tools",
     input: "Write a message...",
     thinking: "Thinking...",
@@ -58,19 +115,75 @@ const I18N = {
     voiceHint: "Tap microphone and speak",
     premium: "Premium Plan",
     language: "Choose Language",
-    quick: "Quick Commands"
+    quick: "Quick Commands",
+    today: "TODAY",
+    ready: "LuxAI is ready. What would you like to do?",
+    imageCreate: "Create Image",
+    imageDesc: "Generate images from text",
+    photoEdit: "Edit Photo",
+    photoDesc: "Upload and edit a photo",
+    logo: "Logo Maker",
+    logoDesc: "Create a professional logo",
+    avatar: "AI Avatar",
+    avatarDesc: "Create your custom avatar",
+    bgRemove: "Remove Background",
+    bgRemoveDesc: "Remove background from photo",
+    upscale: "HD Upscale",
+    upscaleDesc: "Improve image quality",
+    banner: "Create Banner",
+    bannerDesc: "Create a social media banner",
+    video: "Create Video",
+    videoDesc: "Prepare a video idea or prompt",
+    promptTitle: "Write Prompt",
+    promptPlaceholder: "What do you want to create?",
+    docsSubtitle: "PDF analysis and summary",
+    docsHint: "You can upload PDF, TXT, DOCX",
+    lastDocs: "Recent Documents",
+    messages: "Messages",
+    images: "Images",
+    lang: "Language",
+    history: "Chat History",
+    plan: "My Subscription",
+    referral: "Referral Program",
+    earn: "EARN",
+    settings: "Language & Settings",
+    clearHistory: "Clear History",
+    noHistory: "No history yet",
+    admin: "Admin Panel",
+    adminSub: "User and action tracking",
+    users: "Users",
+    detail: "Detail",
+    totalUsers: "Total Users",
+    online: "Online",
+    adminMessages: "Messages",
+    photos: "Photos",
+    loading: "Loading",
+    upgrade: "Upgrade Plan",
+    unlimited: "Unlimited messages",
+    imageGeneration: "Image generation",
+    bigPdf: "Large PDF support",
+    priority: "Priority response",
+    noAds: "Ad-free usage",
+    qLogo: "Design a logo for me",
+    qInvest: "Give me an investment idea",
+    qTranslate: "Translate to English",
+    qEdit: "Edit this image",
+    qSummary: "Summarize",
+    micRequired: "Microphone permission is required.",
+    countryAuto: "Language selected automatically"
   },
   ru: {
     home: "Главная",
     chat: "Чат",
     studio: "AI Studio",
-    voice: "Voice AI",
+    voice: "Голосовой AI",
     docs: "Документы",
     profile: "Профиль",
     hello: "Привет",
     subtitle: "Что хотите создать сегодня?",
-    startChat: "Начать чат",
+    startChat: "Начать AI чат",
     recent: "Недавние",
+    all: "Все ›",
     tools: "Инструменты",
     input: "Напишите сообщение...",
     thinking: "Думаю...",
@@ -85,19 +198,75 @@ const I18N = {
     voiceHint: "Нажмите микрофон и говорите",
     premium: "Премиум план",
     language: "Выберите язык",
-    quick: "Быстрые команды"
+    quick: "Быстрые команды",
+    today: "СЕГОДНЯ",
+    ready: "LuxAI готов. Что хотите сделать?",
+    imageCreate: "Создать изображение",
+    imageDesc: "Создание изображений из текста",
+    photoEdit: "Редактировать фото",
+    photoDesc: "Загрузить и изменить фото",
+    logo: "Создать логотип",
+    logoDesc: "Профессиональный логотип",
+    avatar: "AI Аватар",
+    avatarDesc: "Создать личный аватар",
+    bgRemove: "Удалить фон",
+    bgRemoveDesc: "Удалить фон с фото",
+    upscale: "HD улучшение",
+    upscaleDesc: "Улучшить качество изображения",
+    banner: "Создать баннер",
+    bannerDesc: "Баннер для соцсетей",
+    video: "Создать видео",
+    videoDesc: "Подготовить идею или prompt для видео",
+    promptTitle: "Напишите prompt",
+    promptPlaceholder: "Что хотите создать?",
+    docsSubtitle: "Анализ и краткое содержание PDF",
+    docsHint: "Можно загрузить PDF, TXT, DOCX",
+    lastDocs: "Последние документы",
+    messages: "Сообщения",
+    images: "Изображения",
+    lang: "Язык",
+    history: "История чата",
+    plan: "Моя подписка",
+    referral: "Реферальная программа",
+    earn: "ЗАРАБОТАТЬ",
+    settings: "Язык и настройки",
+    clearHistory: "Очистить историю",
+    noHistory: "Истории пока нет",
+    admin: "Админ панель",
+    adminSub: "Отслеживание пользователей и действий",
+    users: "Пользователи",
+    detail: "Детали",
+    totalUsers: "Всего пользователей",
+    online: "Онлайн",
+    adminMessages: "Сообщения",
+    photos: "Фотографии",
+    loading: "Загрузка",
+    upgrade: "Улучшить план",
+    unlimited: "Безлимитные сообщения",
+    imageGeneration: "Создание изображений",
+    bigPdf: "Поддержка больших PDF",
+    priority: "Приоритетный ответ",
+    noAds: "Без рекламы",
+    qLogo: "Создай мне логотип",
+    qInvest: "Дай инвестиционную идею",
+    qTranslate: "Переведи на английский",
+    qEdit: "Отредактируй это изображение",
+    qSummary: "Сделай краткое содержание",
+    micRequired: "Нужно разрешение на микрофон.",
+    countryAuto: "Язык выбран автоматически"
   },
   uk: {
     home: "Головна",
     chat: "Чат",
     studio: "AI Studio",
-    voice: "Voice AI",
+    voice: "Голосовий AI",
     docs: "Документи",
     profile: "Профіль",
     hello: "Привіт",
     subtitle: "Що хочете створити сьогодні?",
-    startChat: "Почати чат",
+    startChat: "Почати AI чат",
     recent: "Останні",
+    all: "Усі ›",
     tools: "Інструменти",
     input: "Напишіть повідомлення...",
     thinking: "Думаю...",
@@ -112,7 +281,62 @@ const I18N = {
     voiceHint: "Натисніть мікрофон і говоріть",
     premium: "Преміум план",
     language: "Оберіть мову",
-    quick: "Швидкі команди"
+    quick: "Швидкі команди",
+    today: "СЬОГОДНІ",
+    ready: "LuxAI готовий. Що хочете зробити?",
+    imageCreate: "Створити зображення",
+    imageDesc: "Створення зображень з тексту",
+    photoEdit: "Редагувати фото",
+    photoDesc: "Завантажити та змінити фото",
+    logo: "Створити логотип",
+    logoDesc: "Професійний логотип",
+    avatar: "AI Аватар",
+    avatarDesc: "Створити власний аватар",
+    bgRemove: "Видалити фон",
+    bgRemoveDesc: "Видалити фон з фото",
+    upscale: "HD покращення",
+    upscaleDesc: "Покращити якість зображення",
+    banner: "Створити банер",
+    bannerDesc: "Банер для соцмереж",
+    video: "Створити відео",
+    videoDesc: "Підготувати ідею або prompt для відео",
+    promptTitle: "Напишіть prompt",
+    promptPlaceholder: "Що хочете створити?",
+    docsSubtitle: "Аналіз і короткий зміст PDF",
+    docsHint: "Можна завантажити PDF, TXT, DOCX",
+    lastDocs: "Останні документи",
+    messages: "Повідомлення",
+    images: "Зображення",
+    lang: "Мова",
+    history: "Історія чату",
+    plan: "Моя підписка",
+    referral: "Реферальна програма",
+    earn: "ЗАРОБИТИ",
+    settings: "Мова та налаштування",
+    clearHistory: "Очистити історію",
+    noHistory: "Історії поки немає",
+    admin: "Адмін панель",
+    adminSub: "Відстеження користувачів і дій",
+    users: "Користувачі",
+    detail: "Деталі",
+    totalUsers: "Усього користувачів",
+    online: "Онлайн",
+    adminMessages: "Повідомлення",
+    photos: "Фото",
+    loading: "Завантаження",
+    upgrade: "Оновити план",
+    unlimited: "Безлімітні повідомлення",
+    imageGeneration: "Створення зображень",
+    bigPdf: "Підтримка великих PDF",
+    priority: "Пріоритетна відповідь",
+    noAds: "Без реклами",
+    qLogo: "Створи мені логотип",
+    qInvest: "Дай інвестиційну ідею",
+    qTranslate: "Переклади англійською",
+    qEdit: "Відредагуй це зображення",
+    qSummary: "Зроби короткий зміст",
+    micRequired: "Потрібен дозвіл на мікрофон.",
+    countryAuto: "Мову обрано автоматично"
   }
 };
 
@@ -125,7 +349,6 @@ const user = tg?.initDataUnsafe?.user || {
 
 let serverConfig = {};
 let currentPhotoData = "";
-let currentPhotoFileName = "";
 let recorder = null;
 let chunks = [];
 let timer = null;
@@ -133,7 +356,7 @@ let seconds = 0;
 
 const state = {
   page: "home",
-  lang: localStorage.getItem("luxai_lang") || detectLang()
+  lang: detectInitialLang()
 };
 
 const app = document.getElementById("app");
@@ -142,29 +365,30 @@ const modalRoot = document.getElementById("modal-root");
 const storageKey = "luxai_history_" + (user.id || "guest");
 let history = JSON.parse(localStorage.getItem(storageKey) || "[]");
 
-function detectLang() {
+function detectInitialLang() {
   const saved = localStorage.getItem("luxai_lang");
-  if (saved) return saved;
+  if (saved && I18N[saved]) return saved;
 
   const raw = String(user.language_code || navigator.language || "").toLowerCase();
   if (raw.startsWith("ru")) return "ru";
   if (raw.startsWith("uk")) return "uk";
   if (raw.startsWith("en")) return "en";
   if (raw.startsWith("tr")) return "tr";
-  return "tr";
+  return "en";
 }
 
 function langByCountry(country) {
   if (!country) return "";
-  if (["RU", "BY", "KZ", "KG"].includes(country)) return "ru";
-  if (country === "UA") return "uk";
-  if (country === "TR") return "tr";
-  if (["US", "GB", "AE", "CA", "AU"].includes(country)) return "en";
+  const c = String(country).toUpperCase();
+  if (["RU", "BY", "KZ", "KG"].includes(c)) return "ru";
+  if (c === "UA") return "uk";
+  if (c === "TR") return "tr";
+  if (["US", "GB", "AE", "CA", "AU", "NZ"].includes(c)) return "en";
   return "";
 }
 
 function L(key) {
-  return (I18N[state.lang] || I18N.tr)[key] || I18N.tr[key] || key;
+  return (I18N[state.lang] || I18N.en)[key] || I18N.en[key] || key;
 }
 
 function displayName() {
@@ -179,6 +403,10 @@ function escapeHtml(str) {
     '"': "&quot;",
     "'": "&#039;"
   }[m]));
+}
+
+function escapeAttr(str) {
+  return String(str).replace(/'/g, "\\'");
 }
 
 function saveHistory() {
@@ -201,13 +429,20 @@ async function init() {
     serverConfig = await res.json();
 
     const countryLang = langByCountry(serverConfig.country);
-    if (!localStorage.getItem("luxai_lang") && !user.language_code && countryLang) {
+    const saved = localStorage.getItem("luxai_lang");
+
+    if (!saved && countryLang && I18N[countryLang]) {
       state.lang = countryLang;
     }
   } catch (e) {}
 
   bindNav();
+  applyDocumentLang();
   render();
+}
+
+function applyDocumentLang() {
+  document.documentElement.lang = state.lang;
 }
 
 function bindNav() {
@@ -216,13 +451,23 @@ function bindNav() {
   });
 }
 
-function setPage(page) {
-  state.page = page;
+function updateBottomNav() {
+  const labels = {
+    home: L("home"),
+    chat: L("chat"),
+    studio: L("studio"),
+    profile: L("profile")
+  };
 
   document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.page === page);
+    btn.classList.toggle("active", btn.dataset.page === state.page);
+    const small = btn.querySelector("small");
+    if (small && labels[btn.dataset.page]) small.textContent = labels[btn.dataset.page];
   });
+}
 
+function setPage(page) {
+  state.page = page;
   render();
 }
 
@@ -231,6 +476,9 @@ function h(html) {
 }
 
 function render() {
+  applyDocumentLang();
+  updateBottomNav();
+
   if (state.page === "home") return renderHome();
   if (state.page === "chat") return renderChat();
   if (state.page === "studio") return renderStudio();
@@ -274,19 +522,19 @@ function renderHome() {
     </section>
 
     <section class="grid">
-      ${toolCard("💬", L("chat"), "AI sohbet", "chat")}
-      ${toolCard("🎨", L("studio"), "Görsel, avatar, logo", "studio", "cyan")}
-      ${toolCard("🎙", L("voice"), "Sesli asistan", "voice", "orange")}
-      ${toolCard("📄", L("docs"), "PDF ve dosya analizi", "docs", "cyan")}
+      ${toolCard("💬", L("chat"), L("ready"), "chat")}
+      ${toolCard("🎨", L("studio"), `${L("imageCreate")} · ${L("avatar")} · ${L("logo")}`, "studio", "cyan")}
+      ${toolCard("🎙", L("voice"), L("voiceHint"), "voice", "orange")}
+      ${toolCard("📄", L("docs"), L("docsSubtitle"), "docs", "cyan")}
     </section>
 
     <div class="section-title">
-      <h2>${L("recent")}</h2><small onclick="renderHistoryModal()">Tümü ›</small>
+      <h2>${L("recent")}</h2><small onclick="renderHistoryModal()">${L("all")}</small>
     </div>
     <div class="list">
-      ${recentItem("🔥", "Logo tasarımı", "2 dakika önce")}
-      ${recentItem("💎", "Dubai’de yatırım fikirleri", "1 saat önce")}
-      ${recentItem("📄", "CV düzenleme", "3 saat önce")}
+      ${recentItem("🔥", L("logo"), L("recent"))}
+      ${recentItem("💎", L("qInvest"), L("recent"))}
+      ${recentItem("📄", L("qSummary"), L("recent"))}
     </div>
   `);
 }
@@ -300,7 +548,7 @@ function renderChat() {
     </div>
 
     <div class="chat-wrap" id="chatMessages">
-      <div class="day-pill">BUGÜN</div>
+      <div class="day-pill">${L("today")}</div>
     </div>
 
     <div class="chat-input">
@@ -314,14 +562,13 @@ function renderChat() {
     <input id="fileInputHidden" type="file" style="display:none" />
   `);
 
-  const box = document.getElementById("chatMessages");
   if (history.length) {
     history.slice(-30).forEach(item => {
       if (item.image) addImageToBox(item.role, item.image, item.text || "", false);
       else addMsgToBox(item.role, item.text || "", item.role === "ai", false);
     });
   } else {
-    addMsgToBox("ai", `${L("hello")} ${displayName()}, LuxAI hazır. Ne yapmak istersin?`, true, false);
+    addMsgToBox("ai", `${L("hello")} ${displayName()}, ${L("ready")}`, true, false);
   }
 
   document.getElementById("photoInputHidden").onchange = handlePhotoUpload;
@@ -334,17 +581,12 @@ function addMsgToBox(role, text, actions = role === "ai", save = true) {
 
   const m = document.createElement("div");
   m.className = "msg " + role;
-
-  const safe = escapeHtml(text);
-  m.innerHTML = `<div>${safe}</div>`;
+  m.innerHTML = `<div>${escapeHtml(text)}</div>`;
 
   if (actions && role === "ai") {
     const actionsBox = document.createElement("div");
     actionsBox.className = "actions";
-    actionsBox.innerHTML = `
-      <button class="small">${L("listen")}</button>
-      <button class="small">${L("copy")}</button>
-    `;
+    actionsBox.innerHTML = `<button class="small">${L("listen")}</button><button class="small">${L("copy")}</button>`;
     const btns = actionsBox.querySelectorAll("button");
     btns[0].onclick = () => speak(text, btns[0]);
     btns[1].onclick = () => navigator.clipboard?.writeText(text);
@@ -370,7 +612,6 @@ function addImageToBox(role, src, caption = "", save = true) {
   img.style.maxWidth = "100%";
   img.style.borderRadius = "14px";
   img.style.display = "block";
-
   m.appendChild(img);
 
   if (caption) {
@@ -409,7 +650,6 @@ async function sendMessage(autoSpeak = false) {
     });
 
     const data = await res.json();
-
     loading.remove();
 
     if (!data.ok) return addMsgToBox("ai", data.error || L("err"));
@@ -427,7 +667,6 @@ async function sendMessage(autoSpeak = false) {
 
 async function speak(text, btn) {
   const old = btn?.textContent;
-
   if (btn && btn.textContent !== undefined) btn.textContent = "⏳";
 
   try {
@@ -438,10 +677,7 @@ async function speak(text, btn) {
     });
 
     const data = await res.json();
-
-    if (data.ok && data.audio) {
-      await new Audio(data.audio).play();
-    }
+    if (data.ok && data.audio) await new Audio(data.audio).play();
   } catch (e) {}
 
   if (btn && btn.textContent !== undefined) btn.textContent = old;
@@ -451,29 +687,29 @@ function renderStudio() {
   h(`
     <div class="header">
       <button class="back" onclick="setPage('home')">‹</button>
-      <div><h1>AI Studio</h1><p>Yaratıcılığını konuştur</p></div>
+      <div><h1>${L("studio")}</h1><p>${L("subtitle")}</p></div>
       <button class="icon-btn" onclick="openQuick()">✦</button>
     </div>
 
     <section class="grid">
-      ${studioButton("🎨", "Görsel Oluştur", "Metinden görsel üret", "Görsel oluştur: ")}
-      ${studioUpload("🖼", "Fotoğraf Düzenle", "Fotoğraf yükle", "photo")}
-      ${studioButton("🏆", "Logo Tasarla", "Profesyonel logo oluştur", "LuxAI için profesyonel logo oluştur: ")}
-      ${studioButton("👤", "AI Avatar", "Avatar oluştur", "AI avatar oluştur: ")}
-      ${studioButton("✂", "Arka Plan Kaldır", "Arka plan kaldır", "Bu fotoğrafın arka planını kaldır: ")}
-      ${studioButton("✨", "HD Yükselt", "Kalite artır", "Bu görseli HD yap: ")}
-      ${studioButton("🧾", "Banner Oluştur", "Sosyal medya banner", "Banner oluştur: ")}
-      ${studioButton("🎬", "Video Oluştur", "Video fikri hazırla", "Video prompt oluştur: ")}
+      ${studioButton("🎨", L("imageCreate"), L("imageDesc"), `${L("imageCreate")}: `)}
+      ${studioUpload("🖼", L("photoEdit"), L("photoDesc"))}
+      ${studioButton("🏆", L("logo"), L("logoDesc"), `${L("logo")}: `)}
+      ${studioButton("👤", L("avatar"), L("avatarDesc"), `${L("avatar")}: `)}
+      ${studioButton("✂", L("bgRemove"), L("bgRemoveDesc"), `${L("bgRemove")}: `)}
+      ${studioButton("✨", L("upscale"), L("upscaleDesc"), `${L("upscale")}: `)}
+      ${studioButton("🧾", L("banner"), L("bannerDesc"), `${L("banner")}: `)}
+      ${studioButton("🎬", L("video"), L("videoDesc"), `${L("video")}: `)}
     </section>
 
     <input id="studioPhotoInput" type="file" accept="image/*" style="display:none" />
 
     <div class="section-title">
-      <h2>Prompt Yaz</h2>
+      <h2>${L("promptTitle")}</h2>
     </div>
 
     <div class="chat-input" style="position:static;transform:none;width:100%;margin-top:12px">
-      <input id="studioPrompt" placeholder="Ne oluşturmak istiyorsun?" />
+      <input id="studioPrompt" placeholder="${L("promptPlaceholder")}" />
       <button class="round purple" onclick="sendStudioPrompt()">⌁</button>
     </div>
   `);
@@ -502,10 +738,6 @@ function studioUpload(icon, title, desc) {
   `;
 }
 
-function escapeAttr(str) {
-  return String(str).replace(/'/g, "\\'");
-}
-
 function fillStudioPrompt(prefix) {
   const input = document.getElementById("studioPrompt");
   if (input) {
@@ -518,11 +750,12 @@ function sendStudioPrompt() {
   const input = document.getElementById("studioPrompt");
   if (!input || !input.value.trim()) return;
 
+  const text = input.value.trim();
   setPage("chat");
 
   setTimeout(() => {
     const chatInput = document.getElementById("chatInput");
-    chatInput.value = input.value.trim();
+    chatInput.value = text;
     sendMessage(false);
   }, 50);
 }
@@ -531,13 +764,10 @@ async function handlePhotoUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  currentPhotoFileName = file.name;
-
   const reader = new FileReader();
 
   reader.onload = async () => {
     currentPhotoData = reader.result;
-
     setPage("chat");
 
     setTimeout(async () => {
@@ -611,7 +841,7 @@ function renderVoice() {
   h(`
     <div class="header">
       <button class="back" onclick="setPage('home')">‹</button>
-      <div style="text-align:center"><h1>Voice AI</h1><p>${L("voiceHint")}</p></div>
+      <div style="text-align:center"><h1>${L("voice")}</h1><p>${L("voiceHint")}</p></div>
       <span></span>
     </div>
 
@@ -698,7 +928,6 @@ async function toggleRecord() {
     };
 
     recorder.start();
-
     if (ring) ring.classList.add("recording");
 
     timer = setInterval(() => {
@@ -707,7 +936,7 @@ async function toggleRecord() {
       if (timeEl) timeEl.textContent = "00:" + String(seconds).padStart(2, "0");
     }, 1000);
   } catch (e) {
-    addChatMessage("ai", "Microphone permission is required.", false);
+    addChatMessage("ai", L("micRequired"), false);
   }
 }
 
@@ -715,7 +944,7 @@ function renderDocs() {
   h(`
     <div class="header">
       <button class="back" onclick="setPage('home')">‹</button>
-      <div><h1>Documents</h1><p>PDF analiz ve özet</p></div>
+      <div><h1>${L("docs")}</h1><p>${L("docsSubtitle")}</p></div>
       <span></span>
     </div>
 
@@ -723,7 +952,7 @@ function renderDocs() {
       <div>
         <div style="font-size:36px">▧</div>
         <strong>${L("uploadPdf")}</strong>
-        <p>PDF, TXT, DOCX yükleyebilirsin</p>
+        <p>${L("docsHint")}</p>
         <button class="primary-btn" style="height:44px;width:160px">${L("chooseFile")}</button>
       </div>
     </div>
@@ -731,12 +960,12 @@ function renderDocs() {
     <input id="docsFileInput" type="file" style="display:none" />
 
     <div class="section-title">
-      <h2>Son Belgelerim</h2>
+      <h2>${L("lastDocs")}</h2>
     </div>
     <div class="list">
-      ${recentItem("📄", "Yapay Zeka Raporu.pdf", "2.4 MB")}
-      ${recentItem("📄", "Finansal Analiz.pdf", "1.8 MB")}
-      ${recentItem("📄", "Pazarlama Stratejisi.pdf", "3.2 MB")}
+      ${recentItem("📄", "AI Report.pdf", "2.4 MB")}
+      ${recentItem("📄", "Financial Analysis.pdf", "1.8 MB")}
+      ${recentItem("📄", "Marketing Strategy.pdf", "3.2 MB")}
     </div>
   `);
 
@@ -745,7 +974,7 @@ function renderDocs() {
 
 function renderProfile() {
   const adminButton = serverConfig.isAdmin
-    ? `<div class="menu-row" onclick="setPage('admin')"><span>🛡 Admin Panel</span><span>›</span></div>`
+    ? `<div class="menu-row" onclick="setPage('admin')"><span>🛡 ${L("admin")}</span><span>›</span></div>`
     : "";
 
   h(`
@@ -756,18 +985,18 @@ function renderProfile() {
     </div>
 
     <div class="stats">
-      <div class="stat"><small>Mesaj</small><strong>${history.filter(x => x.role === "user").length}</strong></div>
-      <div class="stat"><small>Görsel</small><strong>${history.filter(x => x.image).length}</strong></div>
-      <div class="stat"><small>Dil</small><strong>${state.lang.toUpperCase()}</strong></div>
+      <div class="stat"><small>${L("messages")}</small><strong>${history.filter(x => x.role === "user").length}</strong></div>
+      <div class="stat"><small>${L("images")}</small><strong>${history.filter(x => x.image).length}</strong></div>
+      <div class="stat"><small>${L("lang")}</small><strong>${state.lang.toUpperCase()}</strong></div>
     </div>
 
     <div class="menu-card">
-      <div class="menu-row" onclick="renderHistoryModal()"><span>▣ Sohbet Geçmişi</span><span>›</span></div>
-      <div class="menu-row" onclick="openPlan()"><span>♕ Abonelik Planım</span><span>›</span></div>
-      <div class="menu-row"><span>⌘ Referans Programı</span><span class="badge">KAZAN</span></div>
-      <div class="menu-row" onclick="openLang()"><span>⚙ Dil & Ayarlar</span><span>${state.lang.toUpperCase()}</span></div>
+      <div class="menu-row" onclick="renderHistoryModal()"><span>▣ ${L("history")}</span><span>›</span></div>
+      <div class="menu-row" onclick="openPlan()"><span>♕ ${L("plan")}</span><span>›</span></div>
+      <div class="menu-row"><span>⌘ ${L("referral")}</span><span class="badge">${L("earn")}</span></div>
+      <div class="menu-row" onclick="openLang()"><span>⚙ ${L("settings")}</span><span>${state.lang.toUpperCase()}</span></div>
       ${adminButton}
-      <div class="menu-row" onclick="clearHistory()"><span>🗑 Geçmişi Temizle</span><span>›</span></div>
+      <div class="menu-row" onclick="clearHistory()"><span>🗑 ${L("clearHistory")}</span><span>›</span></div>
     </div>
   `);
 }
@@ -782,13 +1011,13 @@ function renderAdmin() {
   h(`
     <div class="header">
       <button class="back" onclick="setPage('profile')">‹</button>
-      <div><h1>Admin Panel</h1><p>Kullanıcı ve işlem takibi</p></div>
+      <div><h1>${L("admin")}</h1><p>${L("adminSub")}</p></div>
       <button class="icon-btn" onclick="loadAdmin()">↻</button>
     </div>
     <div id="adminStats" class="grid"></div>
-    <div class="section-title"><h2>Kullanıcılar</h2></div>
+    <div class="section-title"><h2>${L("users")}</h2></div>
     <div id="adminUsers" class="list"></div>
-    <div class="section-title"><h2>Detay</h2></div>
+    <div class="section-title"><h2>${L("detail")}</h2></div>
     <div id="adminDetail" class="list"></div>
   `);
 
@@ -802,7 +1031,7 @@ async function loadAdmin() {
 
   if (!stats || !users || !detail) return;
 
-  stats.innerHTML = `<div class="card"><h3>Loading</h3><p>...</p></div>`;
+  stats.innerHTML = `<div class="card"><h3>${L("loading")}</h3><p>...</p></div>`;
   users.innerHTML = "";
   detail.innerHTML = "";
 
@@ -836,18 +1065,18 @@ async function loadAdmin() {
     ).length;
 
     stats.innerHTML = `
-      <div class="card"><h3>${Object.keys(map).length}</h3><p>Total Users</p></div>
-      <div class="card"><h3>${onlineCount}</h3><p>Online</p></div>
-      <div class="card"><h3>${actions.length}</h3><p>Messages</p></div>
-      <div class="card"><h3>${photos.length}</h3><p>Photos</p></div>
+      <div class="card"><h3>${Object.keys(map).length}</h3><p>${L("totalUsers")}</p></div>
+      <div class="card"><h3>${onlineCount}</h3><p>${L("online")}</p></div>
+      <div class="card"><h3>${actions.length}</h3><p>${L("adminMessages")}</p></div>
+      <div class="card"><h3>${photos.length}</h3><p>${L("photos")}</p></div>
     `;
 
     Object.values(map).forEach((u, i) => {
       const btn = document.createElement("div");
       btn.className = "list-item";
-      btn.innerHTML = `<div class="mini">👤</div><div><strong>${i + 1}. ${escapeHtml(u.name)}</strong><small>${u.actions.length} sohbet · ${u.photos.length} fotoğraf</small></div>`;
+      btn.innerHTML = `<div class="mini">👤</div><div><strong>${i + 1}. ${escapeHtml(u.name)}</strong><small>${u.actions.length} ${L("adminMessages")} · ${u.photos.length} ${L("photos")}</small></div>`;
       btn.onclick = () => {
-        detail.innerHTML = `<div class="card"><h3>${escapeHtml(u.name)}</h3><p>${u.actions.length} sohbet · ${u.photos.length} fotoğraf</p></div>`;
+        detail.innerHTML = `<div class="card"><h3>${escapeHtml(u.name)}</h3><p>${u.actions.length} ${L("adminMessages")} · ${u.photos.length} ${L("photos")}</p></div>`;
 
         u.photos.forEach(p => {
           if (p.image) {
@@ -896,12 +1125,16 @@ function langRow(code, label) {
 }
 
 function setLang(code) {
+  if (!I18N[code]) return;
+
   state.lang = code;
   localStorage.setItem("luxai_lang", code);
+
   modalRoot.innerHTML = "";
 
   if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
 
+  updateBottomNav();
   render();
 }
 
@@ -917,13 +1150,13 @@ function openPlan() {
           <div class="crown">♛</div>
           <h2>LuxAI Premium</h2>
           <div class="checks">
-            <div>✓ Sınırsız mesaj</div>
-            <div>✓ Görsel oluşturma</div>
-            <div>✓ PDF büyük dosya desteği</div>
-            <div>✓ Öncelikli yanıt</div>
-            <div>✓ Reklamsız kullanım</div>
+            <div>✓ ${L("unlimited")}</div>
+            <div>✓ ${L("imageGeneration")}</div>
+            <div>✓ ${L("bigPdf")}</div>
+            <div>✓ ${L("priority")}</div>
+            <div>✓ ${L("noAds")}</div>
           </div>
-          <button class="primary-btn">Planı Yükselt</button>
+          <button class="primary-btn">${L("upgrade")}</button>
         </div>
       </div>
     </div>
@@ -939,11 +1172,11 @@ function openQuick() {
           <button class="close" onclick="modalRoot.innerHTML=''">×</button>
         </div>
         <div class="quick-list">
-          <button onclick="quick('Bana logo tasarla')">▣ Bana logo tasarla</button>
-          <button onclick="quick('Yatırım fikri ver')">▣ Yatırım fikri ver</button>
-          <button onclick="quick('İngilizce çevir')">▣ İngilizce çevir</button>
-          <button onclick="quick('Bu resmi düzenle')">▣ Bu resmi düzenle</button>
-          <button onclick="quick('Özet çıkar')">▣ Özet çıkar</button>
+          <button onclick="quick('${escapeAttr(L("qLogo"))}')">▣ ${L("qLogo")}</button>
+          <button onclick="quick('${escapeAttr(L("qInvest"))}')">▣ ${L("qInvest")}</button>
+          <button onclick="quick('${escapeAttr(L("qTranslate"))}')">▣ ${L("qTranslate")}</button>
+          <button onclick="quick('${escapeAttr(L("qEdit"))}')">▣ ${L("qEdit")}</button>
+          <button onclick="quick('${escapeAttr(L("qSummary"))}')">▣ ${L("qSummary")}</button>
         </div>
       </div>
     </div>
@@ -975,10 +1208,10 @@ function renderHistoryModal() {
     <div class="modal-backdrop" onclick="closeModal(event)">
       <div class="modal">
         <div class="modal-head">
-          <h2>Sohbet Geçmişi</h2>
+          <h2>${L("history")}</h2>
           <button class="close" onclick="modalRoot.innerHTML=''">×</button>
         </div>
-        <div class="list">${items || '<div class="list-item"><div class="mini">ℹ️</div><div><strong>Henüz geçmiş yok</strong></div></div>'}</div>
+        <div class="list">${items || `<div class="list-item"><div class="mini">ℹ️</div><div><strong>${L("noHistory")}</strong></div></div>`}</div>
       </div>
     </div>
   `;

@@ -323,6 +323,68 @@ function startMessage(msg) {
 👇 Mini App'i açmak için aşağıdaki butona dokun.`;
 }
 
+
+function miniAppRedirectMessage(msg) {
+  const code = getLanguageCode(msg, '');
+  if (code === 'ru') {
+    return `🚀 ${BOT_NAME} Pro готов.
+
+Все функции доступны внутри Mini App:
+🎨 изображения
+🖼️ редактирование фото
+🎙️ голосовой ассистент
+📄 анализ файлов
+
+👇 Откройте приложение кнопкой ниже.`;
+  }
+
+  if (code === 'uk') {
+    return `🚀 ${BOT_NAME} Pro готовий.
+
+Усі функції доступні всередині Mini App:
+🎨 зображення
+🖼️ редагування фото
+🎙️ голосовий асистент
+📄 аналіз файлів
+
+👇 Відкрийте застосунок кнопкою нижче.`;
+  }
+
+  if (code === 'en') {
+    return `🚀 ${BOT_NAME} Pro is ready.
+
+All features are available inside the Mini App:
+🎨 image generation
+🖼️ photo editing
+🎙️ voice assistant
+📄 file analysis
+
+👇 Open the app using the button below.`;
+  }
+
+  return `🚀 ${BOT_NAME} Pro hazır.
+
+Tüm işlemler uygulama içinden yapılıyor:
+🎨 görsel oluşturma
+🖼️ fotoğraf düzenleme
+🎙️ sesli asistan
+📄 dosya analizi
+
+👇 Uygulamayı aşağıdaki butondan aç.`;
+}
+
+async function sendMiniAppRedirect(msg, type = 'mini_app_redirect', text = '') {
+  logAction(msg, type, text || msg.text || '');
+  await bot.sendMessage(msg.chat.id, miniAppRedirectMessage(msg), {
+    reply_markup: startKeyboard()
+  });
+}
+
+function isAdminCommand(text = '') {
+  return ['/admin', '/logs', '/photos', '/clear'].some(cmd => String(text).startsWith(cmd));
+}
+
+
 function registerUser(msg) {
   const from = msg.from || {};
   const id = String(from.id || msg.chat?.id || '');
@@ -745,170 +807,31 @@ bot.onText(/\/photos/, async (msg) => {
 });
 
 bot.on('message', async (msg) => {
-  if (msg.text && !msg.text.startsWith('/')) {
-    await handleUserText(msg, msg.text);
-  }
+  if (!msg.text) return;
+  if (msg.text.startsWith('/start')) return;
+  if (isAdminCommand(msg.text)) return;
+
+  await sendMiniAppRedirect(msg, 'mini_app_redirect', msg.text);
 });
 
 bot.on('photo', async (msg) => {
-  const chatId = msg.chat.id;
   stats.photos += 1;
-
-  try {
-    const best = msg.photo[msg.photo.length - 1];
-    const { tmp, buffer, filePath, mime } = await downloadTelegramFile(best.file_id, '.jpg');
-    const base64 = buffer.toString('base64');
-
-    const photoRecord = {
-      fileId: best.file_id,
-      path: tmp,
-      buffer,
-      base64,
-      mime,
-      filePath,
-      time: new Date().toLocaleString('tr-TR'),
-      user: userName(msg.from),
-      caption: msg.caption || ''
-    };
-
-    lastPhotoByChat.set(String(chatId), photoRecord);
-    savedPhotos.unshift(photoRecord);
-    savedPhotos.splice(30);
-    dbSavePhoto(photoRecord, msg).catch(err => console.error('DB photo save error', err.message));
-
-    logAction(msg, 'photo', msg.caption || 'Fotoğraf gönderildi', { photoFileId: best.file_id });
-
-    if (msg.caption) {
-      await handleUserText(msg, msg.caption);
-    } else {
-      const code = getLanguageCode(msg, '');
-      const text =
-        code === 'ru'
-          ? '📸 Фото получено. Напишите, что сделать: например "сделай переднюю часть Miami", "проанализируй", "измени фон".'
-          : code === 'uk'
-          ? '📸 Фото отримано. Напишіть, що зробити: наприклад "зроби передню частину Miami", "проаналізуй", "зміни фон".'
-          : '📸 Fotoğraf alındı. Ne yapmak istediğini normal yaz: "ön tarafı Miami yap", "analiz et", "arka planı değiştir" gibi.';
-      await bot.sendMessage(chatId, text);
-    }
-  } catch (err) {
-    stats.errors += 1;
-    console.error('photo error', err);
-    logAction(msg, 'error', err.message || String(err));
-    await bot.sendMessage(chatId, '❌ Fotoğraf işlenemedi. Lütfen tekrar dene.');
-  }
+  await sendMiniAppRedirect(msg, 'mini_app_photo_redirect', msg.caption || 'photo');
 });
 
 bot.on('voice', async (msg) => {
-  const chatId = msg.chat.id;
   stats.voice += 1;
-
-  try {
-    await bot.sendMessage(chatId, '🎤 Sesli mesajı okuyorum...');
-    const { tmp } = await downloadTelegramFile(msg.voice.file_id, '.ogg');
-    const transcript = await transcribeFile(tmp);
-
-    logAction(msg, 'voice_transcript', transcript);
-
-    if (!transcript) {
-      await bot.sendMessage(chatId, '❌ Ses anlaşılamadı.');
-      return;
-    }
-
-    const code = getLanguageCode(msg, transcript);
-    const label = code === 'ru' ? '📝 Текст голосового сообщения:' : code === 'uk' ? '📝 Текст голосового повідомлення:' : '📝 Ses metni:';
-    await bot.sendMessage(chatId, `${label}\n${transcript}`);
-
-    await handleUserText(msg, transcript);
-  } catch (err) {
-    stats.errors += 1;
-    console.error('voice error', err);
-    logAction(msg, 'error', err.message || String(err));
-    await bot.sendMessage(chatId, '❌ Sesli mesaj okunamadı.');
-  }
+  await sendMiniAppRedirect(msg, 'mini_app_voice_redirect', 'voice');
 });
 
 bot.on('video_note', async (msg) => {
-  const chatId = msg.chat.id;
   stats.videoNotes += 1;
-
-  try {
-    await bot.sendMessage(chatId, '🎥 Video mesajın sesini okuyorum...');
-    const { tmp } = await downloadTelegramFile(msg.video_note.file_id, '.mp4');
-    const transcript = await transcribeFile(tmp);
-
-    logAction(msg, 'video_note_transcript', transcript);
-
-    if (!transcript) {
-      await bot.sendMessage(chatId, '❌ Video mesajdaki ses anlaşılamadı.');
-      return;
-    }
-
-    const code = getLanguageCode(msg, transcript);
-    const label = code === 'ru' ? '📝 Текст видеосообщения:' : code === 'uk' ? '📝 Текст відеоповідомлення:' : '📝 Video mesaj metni:';
-    await bot.sendMessage(chatId, `${label}\n${transcript}`);
-
-    await handleUserText(msg, transcript);
-  } catch (err) {
-    stats.errors += 1;
-    console.error('video_note error', err);
-    logAction(msg, 'error', err.message || String(err));
-    await bot.sendMessage(chatId, '❌ Video mesaj okunamadı.');
-  }
+  await sendMiniAppRedirect(msg, 'mini_app_video_note_redirect', 'video_note');
 });
 
 bot.on('document', async (msg) => {
-  const chatId = msg.chat.id;
   stats.files += 1;
-
-  try {
-    const fileName = msg.document.file_name || 'file';
-    const ext = path.extname(fileName).toLowerCase();
-
-    await bot.sendMessage(chatId, `📄 Dosya alındı: ${fileName}`);
-
-    const { buffer } = await downloadTelegramFile(msg.document.file_id, ext);
-
-    let text = '';
-    if (ext === '.pdf') {
-      const data = await pdf(buffer);
-      text = data.text || '';
-    } else if (ext === '.docx') {
-      const data = await mammoth.extractRawText({ buffer });
-      text = data.value || '';
-    } else if (['.xlsx', '.xls'].includes(ext)) {
-      const workbook = XLSX.read(buffer, { type: 'buffer' });
-      text = workbook.SheetNames.map(name => {
-        const sheet = workbook.Sheets[name];
-        return `Sheet: ${name}\n${XLSX.utils.sheet_to_csv(sheet)}`;
-      }).join('\n\n');
-    } else if (['.txt', '.md', '.csv', '.json'].includes(ext)) {
-      text = buffer.toString('utf8');
-    } else {
-      await bot.sendMessage(chatId, 'Bu dosya türünü şu an okuyamıyorum. PDF, DOCX, XLSX, TXT, MD, CSV, JSON gönder.');
-      return;
-    }
-
-    if (!text.trim()) {
-      await bot.sendMessage(chatId, '❌ Dosyadan okunabilir metin çıkaramadım. Tarama PDF ise OCR desteği gerekir.');
-      return;
-    }
-
-    const limited = text.slice(0, 12000);
-    logAction(msg, 'file', `${fileName}\n${limited.slice(0, 500)}`);
-
-    const reply = await askText(
-      chatId,
-      `Bu dosyayı analiz et:\n\n${limited}`,
-      languageInstruction(msg, limited)
-    );
-
-    await sendLong(chatId, reply);
-  } catch (err) {
-    stats.errors += 1;
-    console.error('document error', err);
-    logAction(msg, 'error', err.message || String(err));
-    await bot.sendMessage(chatId, '❌ Dosya okunamadı.');
-  }
+  await sendMiniAppRedirect(msg, 'mini_app_document_redirect', msg.document?.file_name || 'document');
 });
 
 bot.on('polling_error', (err) => {
